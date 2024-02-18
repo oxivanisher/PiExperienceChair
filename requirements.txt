@@ -1,0 +1,7 @@
+paho-mqtt
+Flask
+pyyaml
+#adafruit-blinka
+#adafruit-circuitpython-mcp230xx
+RPi.GPIO
+mcp23017

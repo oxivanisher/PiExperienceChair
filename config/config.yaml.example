@@ -1,0 +1,46 @@
+---
+
+mqtt:
+  host: localhost
+  port: 1883
+  base_topic: exchair
+
+i2c:
+  input:
+    play:
+      address: 3
+      pin: 1
+    stop:
+      address: 3
+      pin: 1
+    next:
+      address: 3
+      pin: 1
+    prev:
+      address: 3
+      pin: 1
+
+  output:
+    fan1:
+      address: 3
+      pin: 1
+    fan2:
+      address: 3
+      pin: 1
+
+playlist:
+  - name: desert
+    file: desert.mpg
+    fan1: true
+    fan2: false
+    heat1: true
+    heat2: false
+    duration: 3
+
+  - name: ice
+    file: ice.mpg
+    fan1: true
+    fan2: false
+    heat1: true
+    heat2: false
+    duration: 3
