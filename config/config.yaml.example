@@ -5,6 +5,9 @@ mqtt:
   port: 1883
   base_topic: exchair
 
+omx:
+  media_path: /tmp
+
 i2c:
   input:
     play:
@@ -28,19 +31,21 @@ i2c:
       address: 3
       pin: 1
 
-playlist:
+scenes:
   - name: desert
     file: desert.mpg
-    fan1: true
-    fan2: false
-    heat1: true
-    heat2: false
+    i2c_outputs:
+      fan1: true
+      fan2: false
+      heat1: true
+      heat2: false
     duration: 3
 
   - name: ice
     file: ice.mpg
-    fan1: true
-    fan2: false
-    heat1: true
-    heat2: false
+    i2c_outputs:
+      fan1: true
+      fan2: false
+      heat1: true
+      heat2: false
     duration: 3

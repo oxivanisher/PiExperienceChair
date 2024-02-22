@@ -5,3 +5,4 @@ pyyaml
 #adafruit-circuitpython-mcp230xx
 RPi.GPIO
 mcp23017
+smbus2
