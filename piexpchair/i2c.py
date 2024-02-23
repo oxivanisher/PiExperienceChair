@@ -30,13 +30,11 @@ class MCP23017Controller(PiExpChair):
             # and self.config['i2c']['output'][input_name]['pin']
             # and save it in self.i2c_outputs[output_name]
 
+    def on_connect(self, client, userdata, flags, reason_code, properties):
+        if super().on_connect(client, userdata, flags, reason_code, properties):
+            self.mqtt_subscribe(client, "videoplayer")
+
     # # MQTT callback functions
-    def mqtt_subscribe(self):
-        super().mqtt_subscribe()
-
-        self.logger.debug("Subscribing to videoplayer channel")
-        self.mqtt_client.subscribe("%s/videoplayer" % self.config['mqtt']['base_topic'])
-
     def on_message(self, client, userdata, msg):
         super().on_message(client, userdata, msg)
 

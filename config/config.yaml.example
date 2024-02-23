@@ -5,8 +5,11 @@ mqtt:
   port: 1883
   base_topic: exchair
 
-omx:
-  media_path: /tmp
+videoplayer:
+  media_path: /home/pi/media
+  rc_host: localhost
+  rc_port: 9999
+  rc_password: ladida
 
 i2c:
   input:

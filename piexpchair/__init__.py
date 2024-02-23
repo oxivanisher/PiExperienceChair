@@ -2,8 +2,10 @@ import yaml
 import logging
 import os
 import random
+import time
 
 import paho.mqtt.client as mqtt
+from paho.mqtt.enums import MQTTProtocolVersion
 
 CONFIG_PATH = os.getenv('CONFIG_PATH', "config/config.yaml")
 
@@ -43,39 +45,38 @@ class PiExpChair:
         # Initialize MQTT client
         self.mqtt_client_id = f'PiExpChair-{self.__class__.__name__}-{random.randint(0, 1000)}'
 
-        def on_connect(client, userdata, flags, rc):
-            if rc == 0:
-                self.logger.debug("Successfully connected to MQTT Broker")
-            else:
-                self.logger.warning("Failed to connect, return code %d\n", rc)
-
         self.logger.debug(f"Connecting to MQTT broker with client ID: {self.mqtt_client_id}")
-        self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, self.mqtt_client_id)
+        self.mqtt_client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+                                       client_id=self.mqtt_client_id,
+                                       protocol=MQTTProtocolVersion.MQTTv5)
 
         if log_level == logging.DEBUG:
-            self.logger.debug(f"Enable MQTT logging")
-            self.mqtt_client.enable_logger()
+            self.logger.debug(f"Enable MQTT logging since DEBUG is enabled")
+            self.mqtt_client.enable_logger(self.logger)
 
         # Configure MQTT client callbacks
-        self.mqtt_client.on_connect = on_connect
+        self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
-        self.mqtt_subscribe()
 
         # Connect to MQTT broker
         self.mqtt_client.will_set("%s/status" % self.config['mqtt']['base_topic'],
                                   f"{self.mqtt_client_id} offline", 0, False)
         self.mqtt_client.connect(self.config['mqtt']['host'], self.config['mqtt']['port'])
-        self.mqtt_client.loop_start()
-
-        self.mqtt_client.publish("%s/status" % self.config['mqtt']['base_topic'],
-                                 f"{self.mqtt_client_id} online")
 
         self.terminate = False
 
     # MQTT callback functions
-    def mqtt_subscribe(self):
-        self.logger.debug("Subscribing to control channel")
-        self.mqtt_client.subscribe("%s/control" % self.config['mqtt']['base_topic'])
+    def on_connect(self, client, userdata, flags, reason_code, properties):
+        if reason_code.is_failure:
+            self.logger.warning(f"Failed to connect, return code: {reason_code}")
+            return False
+        else:
+            self.logger.debug("Successfully connected to MQTT Broker")
+            self.mqtt_subscribe(client, "control")
+
+            self.mqtt_client.publish("%s/status" % self.config['mqtt']['base_topic'],
+                                     f"{self.mqtt_client_id} online")
+            return True
 
     def on_message(self, client, userdata, msg):
         try:
@@ -98,6 +99,11 @@ class PiExpChair:
                     self.prev()
         except Exception as e:
             self.logger.warning("Error processing message in on_message:", e)
+
+    def mqtt_subscribe(self, client, channel_name):
+        channel = "%s/%s" % (self.config['mqtt']['base_topic'], channel_name)
+        self.logger.debug(f"Subscribing to channel: {channel}")
+        client.subscribe(channel)
 
     def _send_control_command(self, command):
         self.mqtt_client.publish("%s/control" % self.config['mqtt']['base_topic'], command)
@@ -124,23 +130,25 @@ class PiExpChair:
 
     # Player methods
     def play(self):
-        self.logger.debug("Method play implemented")
+        self.logger.debug("Method play not implemented")
 
     def stop(self):
-        self.logger.debug("Method stop implemented")
+        self.logger.debug("Method stop not implemented")
 
     def next(self):
-        self.logger.debug("Method next implemented")
+        self.logger.debug("Method next not implemented")
 
     def prev(self):
-        self.logger.debug("Method prev implemented")
+        self.logger.debug("Method prev not implemented")
 
     # Control methods
     def run(self):
         self.logger.debug("Entering main loop")
         while not self.terminate:
             try:
-                self.mqtt_client.loop(.05)
+                self.mqtt_client.loop_start()
+                # time.sleep(0.05)
+                # self.mqtt_client.loop_misc()
             except Exception as e:
                 self.logger.warning("Error processing message in main loop:", e)
         self.logger.debug("Main loop ended")
