@@ -1,9 +1,7 @@
 paho-mqtt>=2.0.0
 Flask
 pyyaml
-#adafruit-blinka
-#adafruit-circuitpython-mcp230xx
 RPi.GPIO
-mcp23017
 smbus2
 requests
+adafruit-circuitpython-mcp230xx

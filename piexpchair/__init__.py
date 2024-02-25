@@ -142,17 +142,25 @@ class PiExpChair:
         self.logger.debug("Method prev not implemented")
 
     # Control methods
+    def module_run(self):
+        pass
+
     def run(self):
         self.logger.debug("Entering main loop")
-        while not self.terminate:
-            try:
-                self.mqtt_client.loop_start()
-                # time.sleep(0.05)
-                # self.mqtt_client.loop_misc()
-            except Exception as e:
-                self.logger.warning("Error processing message in main loop:", e)
-        self.logger.debug("Main loop ended")
-        self.mqtt_client.disconnect()
+
+        try:
+            self.mqtt_client.loop_start()
+
+            while not self.terminate:
+                self.module_run()
+                time.sleep(0.01)
+
+        except Exception as e:
+            self.logger.warning("Error processing message in main loop:", e)
+        finally:
+            self.mqtt_client.loop_stop()
+            self.logger.debug("Main loop ended")
+            self.mqtt_client.disconnect()
 
     def quit(self):
         self.logger.debug("Terminating main loop")
