@@ -1,58 +1,64 @@
 from piexpchair import PiExpChair
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
+# Load config.yaml content
+with open('config/config.yaml', 'r') as file:
+    config_content = file.read()
 
-class MCP23017Controller(PiExpChair):
-    def __init__(self):
-        super().__init__()
 
-    # Routes for controlling OMXPlayer
-    @app.route('/quit')
-    def quit(self):
-        self.send_quit()
-        return "OK"
+# Routes for controlling PiExpChair
+@app.route('/')
+def index():
+    return render_template('index.html', config_content=config_content)
 
-    @app.route('/play')
-    def play(self):
-        self.send_play()
-        return "OK"
 
-    @app.route('/stop')
-    def stop(self):
-        self.send_stop()
-        return "OK"
+@app.route('/quit')
+def quit():
+    return render_template('index.html', config_content=config_content)
 
-    @app.route('/next')
-    def next(self):
-        self.send_next()
-        return "OK"
 
-    @app.route('/prev')
-    def prev(self):
-        self.send_prev()
-        return "OK"
+@app.route('/play')
+def play():
+    piexpchair.send_play()
+    return render_template('index.html', config_content=config_content)
 
-    # Routes for managing YAML configuration file
-    @app.route('/config')
-    def get_config(self):
-        # Read YAML configuration file and return it as JSON
-        # Example implementation:
-        with open('config/config.yaml', 'r') as file:
-            pass
-        return None
 
-    @app.route('/config', methods=['POST'])
-    def update_config(self):
-        # Update YAML configuration file based on POST request data
-        # Example implementation:
-        new_config = request.json
-        with open('config/config.yaml', 'w') as file:
-            pass
-        return None
+@app.route('/stop')
+def stop():
+    piexpchair.send_stop()
+    return render_template('index.html', config_content=config_content)
+
+
+@app.route('/next')
+def next():
+    piexpchair.send_next()
+    return render_template('index.html', config_content=config_content)
+
+
+@app.route('/prev')
+def prev():
+    piexpchair.send_prev()
+    return render_template('index.html', config_content=config_content)
+
+
+# Routes for managing YAML configuration file
+@app.route('/save_config', methods=['POST'])
+def save_config():
+    # Save modified config content
+    new_config_content = request.form['config']
+    with open('config/config.yaml', 'w') as file:
+        file.write(new_config_content)
+    # Call quit method
+    return quit()
 
 
 if __name__ == '__main__':
-    app.run(debug=True)  # Set debug=True for development
+    piexpchair = PiExpChair()
+    piexpchair.__init__()
+
+    piexpchair.mqtt_client.loop_start()
+
+    app.run(debug=True, host="0.0.0.0")

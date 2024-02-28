@@ -105,10 +105,6 @@ class VideoPlayer(PiExpChair):
         self.logger.info("Received stop request")
         self.load_idle_animation()
 
-    def quit(self):
-        self.logger.info("Received quit request")
-        self.stop_videoplayer()
-
     def module_run(self):
         if self.next_timeout > 0:
             if time.time() >= self.next_timeout:
