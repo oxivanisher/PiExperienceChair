@@ -2,7 +2,7 @@
 Description=PiExperience Chair i2c module
 
 [Service]
-ExecStart=/home/pi/.local/bin/python3 /home/pi/PiExperienceChair/piexpchair/i2c.py
+ExecStart=/home/pi/.local/bin/python3 /home/pi/PiExperienceChair/src/i2c.py
 WorkingDirectory=/home/pi/PiExperienceChair/
 Restart=always
 RestartSec=5

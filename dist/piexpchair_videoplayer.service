@@ -2,7 +2,7 @@
 Description=PiExperience Chair videoplayer module
 
 [Service]
-ExecStart=/home/pi/.local/bin/python3 /home/pi/PiExperienceChair/piexpchair/videoplayer.py
+ExecStart=/home/pi/.local/bin/python3 /home/pi/PiExperienceChair/src/videoplayer.py
 WorkingDirectory=/home/pi/PiExperienceChair/
 Restart=always
 RestartSec=5

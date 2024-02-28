@@ -18,9 +18,9 @@ This project controls a ~~omxplayer~~ vlc and i2c outputs from a webui and some 
 * git clone https://github.com/oxivanisher/PiExperienceChair.git
 * python3 -m venv /home/pi/.local
 * /home/pi/.local/bin/pip install -r PiExperienceChair/requirements.txt
-* sudo cp PiExperienceChair/dist/piexpchair_i2c.service /etc/systemd/system/
-* sudo cp PiExperienceChair/dist/piexpchair_videoplayer.service /etc/systemd/system/
-* sudo cp PiExperienceChair/dist/piexpchair_webui.service /etc/systemd/system/
+* sudo ln -s /home/pi/PiExperienceChair/dist/piexpchair_i2c.service /etc/systemd/system/
+* sudo ln -s /home/pi/PiExperienceChair/dist/piexpchair_videoplayer.service /etc/systemd/system/
+* sudo ln -s /home/pi/PiExperienceChair/dist/piexpchair_webui.service /etc/systemd/system/
 * sudo systemctl daemon-reload
 * sudo systemctl enable --now piexpchair_i2c.service
 * sudo systemctl enable --now piexpchair_videoplayer.service
