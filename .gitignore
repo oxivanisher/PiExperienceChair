@@ -1,5 +1,6 @@
 # Project files
 config/config.yaml
+config/broker.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
