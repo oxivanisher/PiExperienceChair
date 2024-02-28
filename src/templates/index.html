@@ -3,7 +3,6 @@
 <head>
     <title>Flask Buttons and Config Editor</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css">
     <style>
         .button-container {
             display: flex;
@@ -24,7 +23,8 @@
         }
         .form-control {
             flex-grow: 1;
-            height: auto !important; /* Override default height */
+            min-height: 100px; /* Adjust minimum height */
+            resize: vertical; /* Allow vertical resizing */
         }
     </style>
 </head>
@@ -50,12 +50,23 @@
         </div>
         <div class="form-container">
             <form method="post" action="/save_config" class="flex-grow-1">
-                <textarea class="form-control language-yaml" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
+                <textarea class="form-control" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
                 <button class="btn btn-primary mt-3" type="submit">Save Config</button>
             </form>
         </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-yaml.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script>
+        // Syntax highlight YAML content in textareas
+        document.addEventListener('DOMContentLoaded', function () {
+            var textareas = document.querySelectorAll('textarea.language-yaml');
+            textareas.forEach(function (textarea) {
+                var yamlContent = textarea.value;
+                var highlightedContent = jsyaml.dump(jsyaml.load(yamlContent));
+                textarea.value = highlightedContent;
+            });
+        });
+    </script>
 </body>
 </html>

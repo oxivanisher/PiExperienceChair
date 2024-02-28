@@ -5,6 +5,7 @@ from piexpchair import PiExpChair
 import os
 import socket
 
+
 class VideoPlayer(PiExpChair):
     def __init__(self):
         super().__init__()

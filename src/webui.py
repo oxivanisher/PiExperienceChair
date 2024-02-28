@@ -24,32 +24,32 @@ def index():
 
 @app.route('/quit')
 def quit():
-    piexpchair.send_quit()
+    pxc.send_quit()
     shutdown_server()
     return render_template('index.html', config_content=config_content)
 
 
 @app.route('/play')
 def play():
-    piexpchair.send_play()
+    pxc.send_play()
     return render_template('index.html', config_content=config_content)
 
 
 @app.route('/stop')
 def stop():
-    piexpchair.send_stop()
+    pxc.send_stop()
     return render_template('index.html', config_content=config_content)
 
 
 @app.route('/next')
 def next():
-    piexpchair.send_next()
+    pxc.send_next()
     return render_template('index.html', config_content=config_content)
 
 
 @app.route('/prev')
 def prev():
-    piexpchair.send_prev()
+    pxc.send_prev()
     return render_template('index.html', config_content=config_content)
 
 
@@ -65,7 +65,9 @@ def save_config():
 
 
 if __name__ == '__main__':
-    piexpchair = PiExpChair()
-    piexpchair.run()
+    pxc = PiExpChair()
+    pxc.__init__()
+    pxc.mqtt_client.loop_start()
+    pxc.logger.info(f"Starting flask app in {app.root_path}")
 
     app.run(debug=True, host="0.0.0.0")
