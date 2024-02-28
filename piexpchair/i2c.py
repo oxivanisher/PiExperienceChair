@@ -65,6 +65,11 @@ class MCP23017Controller(PiExpChair):
                         self.play_scene(scene_index)
                     else:
                         self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
+
+            elif msg.topic == "%s/videoplayer/idle" % self.config['mqtt']['base_topic']:
+                self.logger.info("Received idle scene command")
+                self.disable_outputs()
+
         except Exception as e:
             self.logger.warning("Error processing message in on_message for videoplayer:", e)
 
@@ -86,26 +91,33 @@ class MCP23017Controller(PiExpChair):
 
     def module_run(self):
         for input_name in self.i2c_inputs.keys():
-            current_value = self.i2c_inputs[input_name].value
-            if current_value != self.input_states[input_name]:
-                self.logger.debug(f"Input {input_name} changed to {current_value}")
-                self.input_states[input_name] = current_value
-                if not current_value:
-                    if input_name == "play":
-                        self.logger.debug("Detected play button press")
-                        self.send_play()
-                    elif input_name == "stop":
-                        self.logger.debug("Detected stop button press")
-                        self.send_stop()
-                    elif input_name == "next":
-                        self.logger.debug("Detected next button press")
-                        self.send_next()
-                    elif input_name == "prev":
-                        self.logger.debug("Detected prev button press")
-                        self.send_prev()
+            try:
+                current_value = self.i2c_inputs[input_name].value
+                if current_value != self.input_states[input_name]:
+                    self.logger.debug(f"Input {input_name} changed to {current_value}")
+                    self.input_states[input_name] = current_value
+                    if not current_value:
+                        if input_name == "play":
+                            self.logger.debug("Detected play button press")
+                            self.send_play()
+                        elif input_name == "stop":
+                            self.logger.debug("Detected stop button press")
+                            self.send_stop()
+                        elif input_name == "next":
+                            self.logger.debug("Detected next button press")
+                            self.send_next()
+                        elif input_name == "prev":
+                            self.logger.debug("Detected prev button press")
+                            self.send_prev()
+            except OSError as e:
+                self.logger.warning(f"Catching OSError during reading of the pins: {e}")
 
     def stop(self):
         self.logger.info("Received stop request. Disabling all outputs.")
+        self.disable_outputs()
+
+    def disable_outputs(self):
+        self.logger.debug("Disabling all outputs.")
         for output_name in self.i2c_outputs:
             self.i2c_outputs[output_name].value = False
 

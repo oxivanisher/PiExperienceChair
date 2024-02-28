@@ -13,5 +13,12 @@ This project controls a ~~omxplayer~~ vlc and i2c outputs from a webui and some 
 * Check if i2c is working: `apt install i2c-tools` and `i2cdetect -y 1`
 * Allow the pi user to access the i2c bus: `usermod -a -G i2c pi`
 
+## Idle animation notes
+How to create a idle animation video from a picture:
+```bash
+convert "some_image.jpg_or.png" -verbose -resize 1920x1080 -background black -gravity center -extent 1920x1080 "/tmp/image_1.jpg"
+ffmpeg -y -framerate "0.01" -i "/tmp/image_%d.jpg" -c:v libx264 -r 30 -pix_fmt yuvj444p -preset veryslow -tune stillimage idle.mp4
+```
+
 ## Resources
 * https://github.com/m1tk4/vlc-kiosk/blob/main/vlc-kiosk
