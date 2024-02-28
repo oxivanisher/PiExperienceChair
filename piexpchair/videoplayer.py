@@ -9,6 +9,9 @@ class VideoPlayer(PiExpChair):
     def __init__(self):
         super().__init__()
 
+        if self.terminate:
+            return
+
         self.current_scene_index = -1
         self.next_timeout = -1.0
 
@@ -44,7 +47,7 @@ class VideoPlayer(PiExpChair):
             current_file = os.path.join(self.config['videoplayer']['media_path'],
                                         scene['file'])
             self.send_vlc_command("enqueue " + current_file)
-        self.mqtt_client.publish("%s/videoplayer/idle" % self.config['mqtt']['base_topic'], "")
+        self.mqtt_client.publish("%s/videoplayer/idle" % self.mqtt_config['base_topic'], "")
 
     def stop_videoplayer(self):
         self.logger.info("Stopping video player")
@@ -81,7 +84,7 @@ class VideoPlayer(PiExpChair):
             self.next_timeout = time.time() + current_scene['duration']
 
             self.logger.debug(f"Publishing scene {current_scene['name']} to MQTT")
-            self.mqtt_client.publish("%s/videoplayer/scene" % self.config['mqtt']['base_topic'], self.current_scene_index)
+            self.mqtt_client.publish("%s/videoplayer/scene" % self.mqtt_config['base_topic'], self.current_scene_index)
 
             self.logger.debug(f"Playing video file {os.path.abspath(current_file)} for scene {current_scene['name']}")
             self.send_vlc_command("goto %d" % playlist_position)

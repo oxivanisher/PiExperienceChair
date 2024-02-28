@@ -1,10 +1,5 @@
 ---
 
-mqtt:
-  host: localhost
-  port: 1883
-  base_topic: exchair
-
 videoplayer:
   media_path: /home/pi/media
   rc_host: localhost

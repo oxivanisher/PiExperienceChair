@@ -1,5 +1,8 @@
 from piexpchair import PiExpChair
 
+import os
+import signal
+
 from flask import Flask, request, render_template
 
 app = Flask(__name__)
@@ -7,6 +10,10 @@ app = Flask(__name__)
 # Load config.yaml content
 with open('config/config.yaml', 'r') as file:
     config_content = file.read()
+
+
+def shutdown_server():
+    return os.kill(os.getpid(), signal.SIGINT)
 
 
 # Routes for controlling PiExpChair
@@ -17,6 +24,8 @@ def index():
 
 @app.route('/quit')
 def quit():
+    piexpchair.send_quit()
+    shutdown_server()
     return render_template('index.html', config_content=config_content)
 
 
@@ -57,8 +66,6 @@ def save_config():
 
 if __name__ == '__main__':
     piexpchair = PiExpChair()
-    piexpchair.__init__()
-
-    piexpchair.mqtt_client.loop_start()
+    piexpchair.run()
 
     app.run(debug=True, host="0.0.0.0")

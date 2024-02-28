@@ -13,6 +13,20 @@ This project controls a ~~omxplayer~~ vlc and i2c outputs from a webui and some 
 * Check if i2c is working: `apt install i2c-tools` and `i2cdetect -y 1`
 * Allow the pi user to access the i2c bus: `usermod -a -G i2c pi`
 
+## Deployment
+* ssh as pi into the raspberry pi
+* git clone https://github.com/oxivanisher/PiExperienceChair.git
+* python3 -m venv /home/pi/.local
+* /home/pi/.local/bin/pip install -r PiExperienceChair/requirements.txt
+* sudo ln -s PiExperienceChair/dist/piexpchair_i2c.service /etc/systemc/system/
+* sudo ln -s PiExperienceChair/dist/piexpchair_videoplayer.service /etc/systemc/system/
+* sudo ln -s PiExperienceChair/dist/piexpchair_webui.service /etc/systemc/system/
+* sudo systemctl daemon-reload
+* sudo systemctl enable --now piexpchair_i2c.service
+* sudo systemctl enable --now piexpchair_videoplayer.service
+* sudo systemctl enable --now piexpchair_webui.service
+* VLC in user desktop hes to be documented yet...
+
 ## Idle animation notes
 How to create a idle animation video from a picture:
 ```bash

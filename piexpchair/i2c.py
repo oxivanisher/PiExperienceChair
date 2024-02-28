@@ -12,6 +12,9 @@ class MCP23017Controller(PiExpChair):
     def __init__(self):
         super().__init__()
 
+        if self.terminate:
+            return
+
         # find all i2c addresses:
         i2c_addresses = []
         for key in self.config['i2c']['input']:
@@ -54,7 +57,7 @@ class MCP23017Controller(PiExpChair):
         super().on_message(client, userdata, msg)
 
         try:
-            if msg.topic == "%s/videoplayer/scene" % self.config['mqtt']['base_topic']:
+            if msg.topic == "%s/videoplayer/scene" % self.mqtt_config['base_topic']:
 
                 if msg.payload.decode() == "":
                     self.logger.info("Received play no scene command")
@@ -66,7 +69,7 @@ class MCP23017Controller(PiExpChair):
                     else:
                         self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
 
-            elif msg.topic == "%s/videoplayer/idle" % self.config['mqtt']['base_topic']:
+            elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
                 self.logger.info("Received idle scene command")
                 self.disable_outputs()
 

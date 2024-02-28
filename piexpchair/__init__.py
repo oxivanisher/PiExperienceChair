@@ -4,6 +4,7 @@ import os
 import random
 import time
 
+from schema import Schema, And, Use, Optional, SchemaError
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import MQTTProtocolVersion
 
@@ -19,17 +20,36 @@ logging.basicConfig(
     level=log_level
 )
 
+broker_schema = Schema({"host": str, "port": int, "base_topic": str})
 
-def read_config(file_path):
+config_schema = Schema({
+    "videoplayer": {"media_path": str, "rc_socket": str, "idle_animation": str},
+    "i2c": {"input": {"play": {"address": hex, "pin": int},
+                      "stop": {"address": hex, "pin": int},
+                      "next": {"address": hex, "pin": int},
+                      "prev": {"address": hex, "pin": int}},
+            "output": {str: {"address": hex, "pin": int}}},
+    "scenes": [{"name": str, "file": str, "i2c_outputs": {str: bool}, "duration": float}]
+})
+
+
+def read_config(file_path, logger, schema_config):
     try:
         with open(file_path, 'r') as file:
             config_data = yaml.safe_load(file)
-        return config_data
     except FileNotFoundError:
-        print(f"Config file '{file_path}' not found.")
+        logger.error(f"Config file '{file_path}' not found.")
         return None
     except yaml.YAMLError as e:
-        print(f"Error reading config file '{file_path}': {e}")
+        logger.error(f"Error reading config file '{file_path}': {e}")
+        return None
+
+    try:
+        schema_config.validate(config_data)
+        logger.debug("Valid config file found")
+        return config_data
+    except SchemaError as se:
+        logger.error(se)
         return None
 
 
@@ -40,7 +60,10 @@ class PiExpChair:
         self.logger.info(f"Initializing PiExpChair module {self.__class__.__name__}")
 
         self.logger.debug(f"Loading config from {os.path.abspath(CONFIG_PATH)}")
-        self.config = read_config('config/config.yaml')
+
+        self.mqtt_config = read_config('config/broker.yaml', self.logger, broker_schema)
+
+        self.config = read_config('config/config.yaml', self.logger, config_schema)
 
         # Initialize MQTT client
         self.mqtt_client_id = f'PiExpChair-{self.__class__.__name__}-{random.randint(0, 1000)}'
@@ -59,11 +82,14 @@ class PiExpChair:
         self.mqtt_client.on_message = self.on_message
 
         # Connect to MQTT broker
-        self.mqtt_client.will_set("%s/status" % self.config['mqtt']['base_topic'],
+        self.mqtt_client.will_set("%s/status" % self.mqtt_config['base_topic'],
                                   f"{self.mqtt_client_id} offline", 0, False)
-        self.mqtt_client.connect(self.config['mqtt']['host'], self.config['mqtt']['port'])
+        self.mqtt_client.connect(self.mqtt_config['host'], self.mqtt_config['port'])
 
-        self.terminate = False
+        if self.config:
+            self.terminate = False
+        else:
+            self.terminate = True
 
     # MQTT callback functions
     def on_connect(self, client, userdata, flags, reason_code, properties):
@@ -74,14 +100,14 @@ class PiExpChair:
             self.logger.debug("Successfully connected to MQTT Broker")
             self.mqtt_subscribe(client, "control")
 
-            self.mqtt_client.publish("%s/status" % self.config['mqtt']['base_topic'],
+            self.mqtt_client.publish("%s/status" % self.mqtt_config['base_topic'],
                                      f"{self.mqtt_client_id} online")
             return True
 
     def on_message(self, client, userdata, msg):
         try:
             self.logger.debug(f"Received message on topic {msg.topic}: {msg.payload}")
-            if msg.topic == "%s/control" % self.config['mqtt']['base_topic']:
+            if msg.topic == "%s/control" % self.mqtt_config['base_topic']:
                 if msg.payload.decode() == "quit":
                     self.logger.info("Received quit command")
                     self.quit()
@@ -101,12 +127,12 @@ class PiExpChair:
             self.logger.warning("Error processing message in on_message:", e)
 
     def mqtt_subscribe(self, client, channel_name):
-        channel = "%s/%s" % (self.config['mqtt']['base_topic'], channel_name)
+        channel = "%s/%s" % (self.mqtt_config['base_topic'], channel_name)
         self.logger.debug(f"Subscribing to channel: {channel}")
         client.subscribe(channel)
 
     def _send_control_command(self, command):
-        self.mqtt_client.publish("%s/control" % self.config['mqtt']['base_topic'], command)
+        self.mqtt_client.publish("%s/control" % self.mqtt_config['base_topic'], command)
 
     def send_quit(self):
         self.logger.info("Sending quit command")
@@ -146,21 +172,24 @@ class PiExpChair:
         pass
 
     def run(self):
-        self.logger.debug("Entering main loop")
+        if self.terminate:
+            self.logger.warning("NOT Entering main loop, probably invalid config found. Exiting")
+        else:
+            self.logger.debug("Entering main loop")
 
-        try:
-            self.mqtt_client.loop_start()
+            try:
+                self.mqtt_client.loop_start()
 
-            while not self.terminate:
-                self.module_run()
-                time.sleep(0.01)
+                while not self.terminate:
+                    self.module_run()
+                    time.sleep(0.01)
 
-        except Exception as e:
-            self.logger.warning("Error processing message in main loop:", e)
-        finally:
-            self.mqtt_client.loop_stop()
-            self.logger.debug("Main loop ended")
-            self.mqtt_client.disconnect()
+            except Exception as e:
+                self.logger.warning("Error processing message in main loop:", e)
+            finally:
+                self.mqtt_client.loop_stop()
+                self.logger.debug("Main loop ended")
+                self.mqtt_client.disconnect()
 
     def quit(self):
         self.logger.debug("Terminating main loop")

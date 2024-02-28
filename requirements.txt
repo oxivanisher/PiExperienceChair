@@ -5,3 +5,4 @@ RPi.GPIO
 smbus2
 requests
 adafruit-circuitpython-mcp230xx
+schema
