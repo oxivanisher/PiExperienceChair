@@ -10,8 +10,10 @@ while true;
 do
   if [ -f "$KILL_FILE" ];
   then
-    echo "Found killfile $KILL_FILE, restarting all services"
     rm $KILL_FILE
+    echo "Found killfile $KILL_FILE, restarting all services"
+    killall vlc
+    sleep 2
     systemctl restart piexpchair_i2c.service
     systemctl restart piexpchair_videoplayer.service
     systemctl restart piexpchair_webui.service
