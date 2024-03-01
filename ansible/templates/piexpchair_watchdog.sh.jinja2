@@ -14,9 +14,8 @@ do
     systemctl stop piexpchair_videoplayer.service
     systemctl stop piexpchair_i2c.service
     systemctl stop piexpchair_webui.service
-    sleep 2
     killall vlc
-    sleep 2
+    sleep 5
     systemctl start piexpchair_webui.service
     systemctl start piexpchair_i2c.service
     systemctl start piexpchair_videoplayer.service
