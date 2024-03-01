@@ -33,6 +33,22 @@ config_schema = Schema({
 })
 
 
+def check_config_for_webui():
+    try:
+        with open('config/config.yaml', 'r') as file:
+            config_data = yaml.safe_load(file)
+    except FileNotFoundError:
+        return False, "Config file 'config/config.yaml' not found."
+    except yaml.YAMLError as e:
+        return False, f"Error reading config file 'config/config.yaml': {e}"
+
+    try:
+        config_schema.validate(config_data)
+        return True, "Config seems to be valid!"
+    except SchemaError as se:
+        return False, se
+
+
 def read_config(file_path, logger, schema_config):
     try:
         with open(file_path, 'r') as file:

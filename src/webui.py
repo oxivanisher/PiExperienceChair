@@ -1,4 +1,4 @@
-from piexpchair import PiExpChair
+from piexpchair import PiExpChair, check_config_for_webui
 
 import os
 import signal
@@ -20,7 +20,12 @@ def shutdown_server():
 # Routes for controlling PiExpChair
 @app.route('/')
 def index():
-    return render_template('index.html', config_content=config_content)
+    result, message = check_config_for_webui()
+    if result:
+        alert_message = None
+    else:
+        alert_message = message
+    return render_template('index.html', config_content=config_content, alert_message=alert_message)
 
 
 @app.route('/quit')
@@ -67,8 +72,7 @@ def save_config():
     new_config_content = request.form['config']
     with open('config/config.yaml', 'w') as file:
         file.write(new_config_content)
-    # Call quit method
-    return quit()
+    return redirect(url_for("index"))
 
 
 if __name__ == '__main__':

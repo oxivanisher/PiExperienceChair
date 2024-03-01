@@ -4,8 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Flask Buttons and Config Editor</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  </head>>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         .button-container {
             display: flex;
@@ -54,19 +53,22 @@
             </form>
         </div>
         <div class="form-container">
+            {% if alert_message %}
+            <div class="alert alert-danger" role="alert"><pre>{{ alert_message | safe }}</pre></div>
+            {% endif %}
             <form method="post" action="/save_config" class="flex-grow-1">
                 <textarea id="config-textarea" class="form-control" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
                 <button class="btn btn-primary mt-3" type="submit">Save Config</button>
             </form>
         </div>
+        <script>
+            // Set textarea height to fill viewport height
+            document.addEventListener('DOMContentLoaded', function () {
+                var textarea = document.getElementById('config-textarea');
+                textarea.style.height = window.innerHeight - textarea.offsetTop - 90 + 'px'; // Adjust for padding and margin
+            });
+        </script>
+        <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     </div>
-    <script>
-        // Set textarea height to fill viewport height
-        document.addEventListener('DOMContentLoaded', function () {
-            var textarea = document.getElementById('config-textarea');
-            textarea.style.height = window.innerHeight - textarea.offsetTop - 85 + 'px'; // Adjust for padding and margin
-        });
-    </script>
-    <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
