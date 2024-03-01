@@ -1,6 +1,9 @@
 #!/bin/bash
 # {{ ansible_managed }}
 
+echo "Trigger the watchdog to restart all daemons once vlc is started"
+echo "System startup daemon reload requested" > {{ target_directory }}/tmp/force_restart
+
 while true;
 do
   echo "$(date) Starting VLC"
