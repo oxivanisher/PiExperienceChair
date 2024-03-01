@@ -69,11 +69,11 @@ class VideoPlayer(PiExpChair):
     # VideoPlayer control functions
     def play_scene(self, scene_index):
         if scene_index >= len(self.config['scenes']):
-            self.logger.debug("Reached end of scenes list. Back to the idle animation.")
+            self.logger.info("Reached end of scenes list. Back to the idle animation.")
             self.load_idle_animation()
         elif scene_index < 0:
-            self.logger.debug("Reached beginning of scenes list. Back to the idle animation.")
-            self.load_idle_animation()
+            self.logger.info("Reached beginning of scenes list. Starting at the beginning.")
+            self.play()
         else:
             self.current_scene_index = scene_index
             playlist_position = self.current_scene_index + 2
