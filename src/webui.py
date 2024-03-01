@@ -58,6 +58,7 @@ def prev():
 def force_restart():
     with open("tmp/force_restart", "w") as text_file:
         text_file.write("Force restart requested %s" % time.time())
+    return render_template('index.html', config_content=config_content)
 
 # Routes for managing YAML configuration file
 @app.route('/save_config', methods=['POST'])
