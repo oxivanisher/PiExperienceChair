@@ -57,7 +57,7 @@
       become_user: root
 
     - name: Deploy vlc script
-      ansible.builtin.file:
+      ansible.builtin.copy:
         src: "vlc_kiosk.sh"
         dest: "/usr/local/bin/vlc_kiosk.sh"
         owner: "{{ target_user }}"
