@@ -48,6 +48,9 @@ class MCP23017Controller(PiExpChair):
             self.i2c_outputs[output_name] = self.mcp[output['address']].get_pin(output['pin'])
             self.i2c_outputs[output_name].direction = digitalio.Direction.OUTPUT
 
+        # Disable all outputs at startup
+        self.disable_outputs()
+
     def on_connect(self, client, userdata, flags, reason_code, properties):
         super().on_connect(client, userdata, flags, reason_code, properties)
         self.mqtt_subscribe(client, "videoplayer/#")
