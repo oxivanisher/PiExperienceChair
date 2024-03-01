@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=vlc_kiosk
+Comment=Start VLC in Kiosk mode
+NoDisplay=false
+Exec=lxterminal --geometry=220x50 --command=/usr/local/bin/vlc_kiosk.sh
+NotShowIn=GNOME;KDE;XFCE;

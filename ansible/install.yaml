@@ -67,9 +67,17 @@
       become_user: root
       notify: restart_lightdm
 
+    - name: Ensure default media folder for piexpchair exists
+      ansible.builtin.file:
+        path: "/home/{{ target_user }}/media/"
+        state: directory
+        mode: '0750'
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+
     - name: Ensure LXDE autostart folder exists
       ansible.builtin.file:
-        path: "/home/{{ target_user }}/.config/lxsession/LXDE-pi/"
+        path: "/home/{{ target_user }}/.config/autostart/"
         state: directory
         mode: '0750'
         owner: "{{ target_user }}"
@@ -77,9 +85,9 @@
       notify: restart_lightdm
 
     - name: Deploy LXDE autostart file for user
-      ansible.builtin.template:
-        src: "lxde-autostart.jinja2"
-        dest: "/home/{{ target_user }}/.config/lxsession/LXDE-pi/autostart"
+      ansible.builtin.copy:
+        src: "vlc_kiosk.desktop"
+        dest: "/home/{{ target_user }}/.config/autostart/vlc_kiosk.desktop"
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
         mode: "0640"
@@ -99,6 +107,7 @@
         name: "{{ item }}"
         state: started
         enabled: true
+        daemon_reload: true
       loop: "{{ services }}"
 
   handlers:
