@@ -13,6 +13,7 @@ There is a ansible playbook to setup everything. Run the following commands as u
 ```bash
 sudo apt install ansible
 git clone https://github.com/oxivanisher/PiExperienceChair.git
+cd PiExperienceChair/ansible
 ansible-playbook -i localhost install.yaml --ask-become-pass
 ```
 

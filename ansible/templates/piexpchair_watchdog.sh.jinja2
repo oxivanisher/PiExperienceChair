@@ -1,0 +1,21 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+# My user: {{ target_user }}
+# My target directory: {{ target_directory }}
+
+KILL_FILE="{{ target_directory }}/tmp/force_restart"
+
+while true;
+do
+  if [ -f "$KILL_FILE" ];
+  then
+    echo "Found killfile $KILL_FILE, restarting all services"
+    rm $KILL_FILE
+    systemctl restart piexpchair_i2c.service
+    systemctl restart piexpchair_videoplayer.service
+    systemctl restart piexpchair_webui.service
+  else
+    sleep 1
+  fi
+done
