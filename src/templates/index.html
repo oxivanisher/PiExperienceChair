@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-bs-theme="dark">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Flask Buttons and Config Editor</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  </head>>
     <style>
         .button-container {
             display: flex;
@@ -13,18 +16,15 @@
             padding: 10px 20px;
             margin: 0 5px;
         }
-        .flex-grow-1 {
-            flex-grow: 1;
-        }
         .form-container {
             display: flex;
             flex-direction: column;
-            min-height: 0; /* Fix for Safari */
+            height: calc(100vh - 180px); /* Adjusted height */
         }
         .form-control {
             flex-grow: 1;
-            min-height: 100px; /* Adjust minimum height */
-            resize: vertical; /* Allow vertical resizing */
+            resize: vertical;
+            width: 100%; /* Fill available width */
         }
     </style>
 </head>
@@ -44,32 +44,29 @@
             <form method="get" action="/prev">
                 <button class="btn btn-success" type="submit" name="action" value="prev">Previous</button>
             </form>
+            <!--
             <form method="get" action="/quit">
-                <button class="btn btn-danger" type="submit" name="action" value="quit">Quit</button>
+                <button class="btn btn-danger" type="submit" name="action" value="quit">Quit processes</button>
             </form>
+            -->
             <form method="get" action="/force_restart">
-                <button class="btn btn-danger" type="submit" name="action" value="force_restart">Force Restart</button>
+                <button class="btn btn-danger" type="submit" name="action" value="force_restart">Restart</button>
             </form>
         </div>
         <div class="form-container">
             <form method="post" action="/save_config" class="flex-grow-1">
-                <textarea class="form-control" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
+                <textarea id="config-textarea" class="form-control" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
                 <button class="btn btn-primary mt-3" type="submit">Save Config</button>
             </form>
         </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script>
-        // Syntax highlight YAML content in textareas
+        // Set textarea height to fill viewport height
         document.addEventListener('DOMContentLoaded', function () {
-            var textareas = document.querySelectorAll('textarea.language-yaml');
-            textareas.forEach(function (textarea) {
-                var yamlContent = textarea.value;
-                var highlightedContent = jsyaml.dump(jsyaml.load(yamlContent));
-                textarea.value = highlightedContent;
-            });
+            var textarea = document.getElementById('config-textarea');
+            textarea.style.height = window.innerHeight - textarea.offsetTop - 85 + 'px'; // Adjust for padding and margin
         });
     </script>
+    <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
