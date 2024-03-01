@@ -91,7 +91,7 @@
 
     - name: Enable and start systemd services for user pi
       ansible.builtin.systemd:
-        name: "{{ item.name }}"
+        name: "{{ item }}"
         user: yes
         state: started
         enabled: true
