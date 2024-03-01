@@ -32,33 +32,33 @@
         <h1 class="mt-5 mb-4 text-center">Flask Buttons and Config Editor</h1>
         <div class="button-container">
             <form method="get" action="/play">
-                <button class="btn btn-primary" type="submit" name="action" value="play">Play</button>
+                <button class="btn btn-primary btn-sm" type="submit" name="action" value="play">Play</button>
             </form>
             <form method="get" action="/stop">
-                <button class="btn btn-secondary" type="submit" name="action" value="stop">Stop</button>
+                <button class="btn btn-secondary btn-sm" type="submit" name="action" value="stop">Stop</button>
             </form>
             <form method="get" action="/next">
-                <button class="btn btn-success" type="submit" name="action" value="next">Next</button>
+                <button class="btn btn-success btn-sm" type="submit" name="action" value="next">Next</button>
             </form>
             <form method="get" action="/prev">
-                <button class="btn btn-success" type="submit" name="action" value="prev">Previous</button>
+                <button class="btn btn-success btn-sm" type="submit" name="action" value="prev">Previous</button>
             </form>
             <!--
             <form method="get" action="/quit">
-                <button class="btn btn-danger" type="submit" name="action" value="quit">Quit processes</button>
+                <button class="btn btn-danger btn-sm" type="submit" name="action" value="quit">Quit processes</button>
             </form>
             -->
             <form method="get" action="/force_restart">
-                <button class="btn btn-danger" type="submit" name="action" value="force_restart">Restart</button>
+                <button class="btn btn-danger btn-sm" type="submit" name="action" value="force_restart">Restart</button>
             </form>
         </div>
         <div class="form-container">
             {% if alert_message %}
-            <div class="alert alert-danger" role="alert"><pre>{{ alert_message | safe }}</pre></div>
+            <div class="alert alert-danger btn-sm" role="alert"><pre>{{ alert_message | safe }}</pre></div>
             {% endif %}
             <form method="post" action="/save_config" class="flex-grow-1">
                 <textarea id="config-textarea" class="form-control" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
-                <button class="btn btn-primary mt-3" type="submit">Save Config</button>
+                <button class="btn btn-primary mt-3 btn-sm" type="submit">Save Config</button>
             </form>
         </div>
         <script>
