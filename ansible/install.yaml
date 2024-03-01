@@ -1,0 +1,104 @@
+---
+- name: Configure localhost
+  hosts: localhost
+  become: yes
+  vars:
+    target_user: "pi"
+    target_directory: "/home/{{ target_user }}/PiExperienceChair"
+    services:
+      - piexpchair_i2c.service
+      - piexpchair_videoplayer.service
+      - piexpchair_webui.service
+      - piexpchair_watchdog.service
+
+  tasks:
+    - name: Ensure i2c is enabled on Raspberry Pi
+      ansible.builtin.lineinfile:
+        path: "/boot/firmware/config.txt"
+        line: "dtparam=i2c_arm=on"
+        state: present
+      when: ansible_distribution == "Raspbian"
+      notify: reboot_pi
+      become: true
+      become_user: root
+
+    - name: Ensure mosquitto and i2c-tools are installed
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - mosquitto
+        - i2c-tools
+        - python3-virtualenv
+      become: true
+      become_user: root
+
+    - name: Ensure target user is in the i2c group
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        groups: i2c
+        append: true
+      become: true
+      become_user: root
+
+    - name: Create python venv and install requirements
+      ansible.builtin.pip:
+        requirements: "{{ target_directory }}/requirements.txt"
+        virtualenv: "{{ target_directory }}/venv"
+
+    - name: Deploy watchdog script
+      ansible.builtin.template:
+        src: "piexpchair_watchdog.sh.jinja2"
+        dest: "/usr/local/bin/piexpchair_watchdog.sh"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0750"
+      become: true
+      become_user: root
+
+    - name: Deploy vlc script
+      ansible.builtin.file:
+        src: "vlc_kiosk.sh"
+        dest: "/usr/local/bin/vlc_kiosk.sh"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0750"
+      become: true
+      become_user: root
+
+    - name: Ensure the vlc scripts gets started at user login
+      ansible.builtin.lineinfile:
+        path: "/home/{{ target_user }}/.profile"
+        regexp: '^lxterminal'
+        line: 'lxterminal /usr/local/bin/vlc_kiosk.sh'
+
+    - name: Ensure systemd folder for services for user pi exists
+      ansible.builtin.file:
+        path: "/home/{{ target_user }}/.config/systemd/user/"
+        state: directory
+        mode: '0755'
+        user: "{{ target_user }}"
+        group: "{{ target_user }}"
+
+    - name: Deploy systemd service files for user pi
+      ansible.builtin.template:
+        src: "{{ item }}.jinja2"
+        dest: "/home/{{ target_user }}/.config/systemd/user/{{ item }}"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
+      loop: "{{ services }}"
+
+    - name: Enable and start systemd services for user pi
+      ansible.builtin.systemd:
+        name: "{{ item.name }}"
+        user: yes
+        state: started
+        enabled: true
+      loop: "{{ services }}"
+
+  handlers:
+    - name: reboot_pi
+      ansible.builtin.reboot:
+      become: true
+      become_user: root

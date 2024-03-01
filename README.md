@@ -8,6 +8,14 @@ This project controls a ~~omxplayer~~ vlc and i2c outputs from a webui and some 
 * To use a local mqtt broker you can use `mosquitto`: `apt install mosquitto`
 * Debug MQTT issues by watching the log of `mosquitto`: `tail -f /var/log/mosquitto/mosquitto.log`
 
+## Ansible based automated setup
+There is a ansible playbook to setup everything. Run the following commands as user `pi`:
+```bash
+sudo apt install ansible
+git clone https://github.com/oxivanisher/PiExperienceChair.git
+ansible-playbook -i localhost install.yaml --ask-become-pass
+```
+
 
 ## Tool notes
 * Check if i2c is working: `apt install i2c-tools` and `i2cdetect -y 1`
