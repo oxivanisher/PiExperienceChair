@@ -1,3 +1,4 @@
+# {{ ansible_managed }}
 [Desktop Entry]
 Type=Application
 Name=vlc_kiosk

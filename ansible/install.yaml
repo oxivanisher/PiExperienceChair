@@ -75,7 +75,7 @@
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
 
-    - name: Ensure LXDE autostart folder exists
+    - name: Ensure autostart folder exists
       ansible.builtin.file:
         path: "/home/{{ target_user }}/.config/autostart/"
         state: directory
@@ -110,6 +110,24 @@
         daemon_reload: true
       loop: "{{ services }}"
 
+    - name: Deploy example broker config
+      ansible.builtin.copy:
+        src: "broker.yaml"
+        dest: "{{ target_directory }}/config/broker.yaml"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0640"
+      notify: trigger_watchtog
+
+    - name: Deploy example broker config
+      ansible.builtin.template:
+        src: "config.yaml.jinja2"
+        dest: "{{ target_directory }}/config/config.yaml"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0640"
+      notify: trigger_watchtog
+
   handlers:
     - name: reboot_pi
       ansible.builtin.reboot:
@@ -120,3 +138,11 @@
       ansible.builtin.systemd_service:
         name: lightdm
         state: restarted
+
+    - name: trigger_watchtog
+      ansible.builtin.copy:
+        content: 'Force restart requested from ansible'
+        dest: "{{ target_directory }}/tmp/force_restart"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0644"
