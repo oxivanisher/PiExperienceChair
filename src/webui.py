@@ -4,7 +4,7 @@ import os
 import signal
 import time
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for
 
 app = Flask(__name__)
 
@@ -27,38 +27,38 @@ def index():
 def quit():
     pxc.send_quit()
     shutdown_server()
-    return render_template('index.html', config_content=config_content)
+    return redirect(url_for("index"))
 
 
 @app.route('/play')
 def play():
     pxc.send_play()
-    return render_template('index.html', config_content=config_content)
+    return redirect(url_for("index"))
 
 
 @app.route('/stop')
 def stop():
     pxc.send_stop()
-    return render_template('index.html', config_content=config_content)
+    return redirect(url_for("index"))
 
 
 @app.route('/next')
 def next():
     pxc.send_next()
-    return render_template('index.html', config_content=config_content)
+    return redirect(url_for("index"))
 
 
 @app.route('/prev')
 def prev():
     pxc.send_prev()
-    return render_template('index.html', config_content=config_content)
+    return redirect(url_for("index"))
 
 
 @app.route('/force_restart')
 def force_restart():
     with open("tmp/force_restart", "w") as text_file:
         text_file.write("Force restart requested %s" % time.time())
-    return render_template('index.html', config_content=config_content)
+    return redirect(url_for("index"))
 
 # Routes for managing YAML configuration file
 @app.route('/save_config', methods=['POST'])
@@ -77,4 +77,4 @@ if __name__ == '__main__':
     pxc.mqtt_client.loop_start()
     pxc.logger.info(f"Starting flask app in {app.root_path}")
 
-    app.run(debug=True, host="0.0.0.0")
+    app.run(debug=False, host="0.0.0.0")
