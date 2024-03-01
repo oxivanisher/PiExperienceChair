@@ -85,18 +85,10 @@
         mode: "0640"
       notify: restart_lightdm
 
-    - name: Ensure systemd folder for services for user pi exists
-      ansible.builtin.file:
-        path: "/home/{{ target_user }}/.config/systemd/user/"
-        state: directory
-        mode: '0755'
-        owner: "{{ target_user }}"
-        group: "{{ target_user }}"
-
     - name: Deploy systemd service files for user pi
       ansible.builtin.template:
         src: "{{ item }}.jinja2"
-        dest: "/home/{{ target_user }}/.config/systemd/user/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
         owner: root
         group: root
         mode: "0644"
