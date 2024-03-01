@@ -77,7 +77,7 @@
         path: "/home/{{ target_user }}/.config/systemd/user/"
         state: directory
         mode: '0755'
-        user: "{{ target_user }}"
+        owner: "{{ target_user }}"
         group: "{{ target_user }}"
 
     - name: Deploy systemd service files for user pi
