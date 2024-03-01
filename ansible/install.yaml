@@ -84,7 +84,7 @@
         group: "{{ target_user }}"
       notify: restart_lightdm
 
-    - name: Deploy LXDE autostart file for user
+    - name: Deploy autostart file for user
       ansible.builtin.copy:
         src: "vlc_kiosk.desktop"
         dest: "/home/{{ target_user }}/.config/autostart/vlc_kiosk.desktop"
@@ -93,7 +93,7 @@
         mode: "0640"
       notify: restart_lightdm
 
-    - name: Deploy systemd service files for user pi
+    - name: Deploy systemd service files
       ansible.builtin.template:
         src: "{{ item }}.jinja2"
         dest: "/etc/systemd/system/{{ item }}"
@@ -102,7 +102,7 @@
         mode: "0644"
       loop: "{{ services }}"
 
-    - name: Enable and start systemd services for user pi
+    - name: Enable and start systemd services
       ansible.builtin.systemd_service:
         name: "{{ item }}"
         state: started
