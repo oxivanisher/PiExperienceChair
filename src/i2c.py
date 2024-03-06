@@ -117,7 +117,7 @@ class MCP23017Controller(PiExpChair):
                             self.send_prev()
                         elif input_name == "shutdown":
                             self.logger.debug("Detected shutdown button press")
-                            self.send_prev()
+                            self.send_shutdown()
             except OSError as e:
                 self.logger.warning(f"Catching OSError during reading of the pins: {e}")
 
