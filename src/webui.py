@@ -70,7 +70,7 @@ def force_restart():
 def shutdown_computer():
     pxc.send_shutdown()
     with open("tmp/shutdown_computer", "w") as text_file:
-        text_file.write("Force system shutdown at %s" % time.time())
+        text_file.write("Force system shutdown from webui at %s" % time.time())
     return redirect(url_for("index"))
 
 # Routes for managing YAML configuration file
