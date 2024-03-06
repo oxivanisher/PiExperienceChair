@@ -111,15 +111,6 @@
       loop: "{{ services }}"
 
     - name: Deploy example broker config
-      ansible.builtin.copy:
-        src: "broker.yaml"
-        dest: "{{ target_directory }}/config/broker.yaml"
-        owner: "{{ target_user }}"
-        group: "{{ target_user }}"
-        mode: "0640"
-      notify: trigger_watchtog
-
-    - name: Deploy example broker config
       ansible.builtin.template:
         src: "config.yaml.jinja2"
         dest: "{{ target_directory }}/config/config.yaml"
