@@ -65,6 +65,12 @@ def force_restart():
         text_file.write("Force restart requested %s" % time.time())
     return redirect(url_for("index"))
 
+@app.route('/shutdown_computer')
+def shutdown_computer():
+    with open("tmp/shutdown_computer", "w") as text_file:
+        text_file.write("Force system shutdown at %s" % time.time())
+    return redirect(url_for("index"))
+
 # Routes for managing YAML configuration file
 @app.route('/save_config', methods=['POST'])
 def save_config():
