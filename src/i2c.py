@@ -118,6 +118,8 @@ class MCP23017Controller(PiExpChair):
                         elif input_name == "shutdown":
                             self.logger.debug("Detected shutdown button press")
                             self.send_shutdown()
+                            with open("tmp/shutdown_computer", "w") as text_file:
+                                text_file.write("Force system shutdown from i2c at %s" % time.time())
             except OSError as e:
                 self.logger.warning(f"Catching OSError during reading of the pins: {e}")
 
