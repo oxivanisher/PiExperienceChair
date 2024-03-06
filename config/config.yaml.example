@@ -18,6 +18,9 @@ i2c:
     prev:
       address: 0x27
       pin: 3
+    shutdown:
+      address: 0x27
+      pin: 4
 
   output:
     fan1:
