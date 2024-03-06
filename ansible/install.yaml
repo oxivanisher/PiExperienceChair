@@ -119,6 +119,15 @@
         mode: "0640"
       notify: trigger_watchtog
 
+    - name: Disable onboard audio since VLC is too stupid
+      ansible.builtin.copy:
+        content: "blacklist snd_bcm2835"
+        dest: "/etc/modprobe.d/alsa-blacklist.conf"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: reboot
+
   handlers:
     - name: reboot_pi
       ansible.builtin.reboot:
