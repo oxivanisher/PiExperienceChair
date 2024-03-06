@@ -61,12 +61,14 @@ def prev():
 
 @app.route('/force_restart')
 def force_restart():
+    pxc.send_stop()
     with open("tmp/force_restart", "w") as text_file:
         text_file.write("Force restart requested %s" % time.time())
     return redirect(url_for("index"))
 
 @app.route('/shutdown_computer')
 def shutdown_computer():
+    pxc.send_shutdown()
     with open("tmp/shutdown_computer", "w") as text_file:
         text_file.write("Force system shutdown at %s" % time.time())
     return redirect(url_for("index"))
