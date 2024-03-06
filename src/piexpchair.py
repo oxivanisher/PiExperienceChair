@@ -139,6 +139,9 @@ class PiExpChair:
                 elif msg.payload.decode() == "prev":
                     self.logger.info("Received prev command")
                     self.prev()
+                elif msg.payload.decode() == "shutdown":
+                    self.logger.info("Received shutdown command")
+                    self.shutdown()
         except Exception as e:
             self.logger.warning("Error processing message in on_message:", e)
 
@@ -170,6 +173,10 @@ class PiExpChair:
         self.logger.info("Sending prev command")
         self._send_control_command("prev")
 
+    def send_shutdown(self):
+        self.logger.info("Sending shutdown command")
+        self._send_control_command("shutdown")
+
     # Player methods
     def play(self):
         self.logger.debug("Method play not implemented")
@@ -182,6 +189,9 @@ class PiExpChair:
 
     def prev(self):
         self.logger.debug("Method prev not implemented")
+
+    def shutdown(self):
+        self.logger.debug("Method shutdown not implemented")
 
     # Control methods
     def module_run(self):
