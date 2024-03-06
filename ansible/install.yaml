@@ -126,7 +126,7 @@
         owner: root
         group: root
         mode: "0644"
-      notify: reboot
+      notify: reboot_pi
 
   handlers:
     - name: reboot_pi
