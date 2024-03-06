@@ -1,49 +1,68 @@
 ---
-
 videoplayer:
-  media_path: /home/pi/media
-  rc_host: localhost
-  rc_port: 9999
-  rc_password: ladida
+  media_path: /home/{{ target_user }}/media/
+  rc_socket: /tmp/vlc_rc.sock
+  idle_animation: idle.mp4
 
 i2c:
   input:
     play:
-      address: 3
-      pin: 1
+      address: 0x27
+      pin: 0
     stop:
-      address: 3
+      address: 0x27
       pin: 1
     next:
-      address: 3
-      pin: 1
+      address: 0x27
+      pin: 2
     prev:
-      address: 3
-      pin: 1
+      address: 0x27
+      pin: 3
 
   output:
     fan1:
-      address: 3
-      pin: 1
+      address: 0x23
+      pin: 0
     fan2:
-      address: 3
+      address: 0x23
       pin: 1
+    massage:
+      address: 0x23
+      pin: 2
+    heat1:
+      address: 0x23
+      pin: 3
+    heat2:
+      address: 0x23
+      pin: 4
 
 scenes:
   - name: desert
-    file: desert.mpg
+    file: desert.mp4
     i2c_outputs:
       fan1: true
       fan2: false
-      heat1: true
-      heat2: false
-    duration: 3
+      massage: true
+      heat1: false
+      heat2: true
+    duration: 122.33
 
   - name: ice
-    file: ice.mpg
+    file: ice.mp4
     i2c_outputs:
-      fan1: true
-      fan2: false
+      fan1: false
+      fan2: true
+      massage: false
       heat1: true
       heat2: false
-    duration: 3
+    duration: 10.13
+
+  - name: jungle
+    file: jungle.mp4
+    i2c_outputs:
+      fan1: true
+      fan2: true
+      massage: true
+      heat1: true
+      heat2: true
+    duration: 15.06
