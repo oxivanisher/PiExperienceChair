@@ -5,6 +5,7 @@
 # My target directory: {{ target_directory }}
 
 KILL_FILE="{{ target_directory }}/tmp/force_restart"
+SHUTDOWN_FILE="{{ target_directory }}/tmp/shutdown_computer"
 
 while true;
 do
@@ -20,6 +21,10 @@ do
     systemctl start piexpchair_i2c.service
     systemctl start piexpchair_videoplayer.service
     rm $KILL_FILE
+  if [ -f "$SHUTDOWN_FILE" ];
+  then
+    echo "Found shutdownfile $SHUTDOWN_FILE, shutting system down"
+    systemctl poweroff
   else
     sleep 1
   fi
