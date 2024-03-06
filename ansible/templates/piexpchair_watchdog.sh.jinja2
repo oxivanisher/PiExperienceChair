@@ -24,6 +24,7 @@ do
   if [ -f "$SHUTDOWN_FILE" ];
   then
     echo "Found shutdownfile $SHUTDOWN_FILE, shutting system down"
+    rm $SHUTDOWN_FILE
     systemctl poweroff
   else
     sleep 1
