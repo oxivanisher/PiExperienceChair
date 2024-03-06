@@ -109,6 +109,10 @@ class VideoPlayer(PiExpChair):
         self.logger.info("Received stop request")
         self.load_idle_animation()
 
+    def shutdown(self):
+        self.logger.info("Received shutdown request")
+        self.load_idle_animation()
+
     def module_run(self):
         if self.next_timeout > 0:
             if time.time() >= self.next_timeout:
