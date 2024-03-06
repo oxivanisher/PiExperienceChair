@@ -21,7 +21,7 @@ do
     systemctl start piexpchair_i2c.service
     systemctl start piexpchair_videoplayer.service
     rm $KILL_FILE
-  if [ -f "$SHUTDOWN_FILE" ];
+  elif [ -f "$SHUTDOWN_FILE" ];
   then
     echo "Found shutdownfile $SHUTDOWN_FILE, shutting system down"
     rm $SHUTDOWN_FILE
