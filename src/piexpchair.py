@@ -27,7 +27,8 @@ config_schema = Schema({
     "i2c": {"input": {"play": {"address": hex, "pin": int},
                       "stop": {"address": hex, "pin": int},
                       "next": {"address": hex, "pin": int},
-                      "prev": {"address": hex, "pin": int}},
+                      "prev": {"address": hex, "pin": int},
+                      "shutdown": {"address": hex, "pin": int}},
             "output": {str: {"address": hex, "pin": int}}},
     "scenes": [{"name": str, "file": str, "i2c_outputs": {str: bool}, "duration": float}]
 })
