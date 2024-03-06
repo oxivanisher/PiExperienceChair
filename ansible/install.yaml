@@ -77,7 +77,7 @@
 
     - name: Ensure autostart folder exists
       ansible.builtin.file:
-        path: "/home/{{ target_user }}/.config/autostart/"
+        path: "/home/{{ target_user }}/./autostart/"
         state: directory
         mode: '0750'
         owner: "{{ target_user }}"
@@ -87,7 +87,7 @@
     - name: Deploy autostart file for user
       ansible.builtin.copy:
         src: "vlc_kiosk.desktop"
-        dest: "/home/{{ target_user }}/.config/autostart/vlc_kiosk.desktop"
+        dest: "/home/{{ target_user }}/./autostart/vlc_kiosk.desktop"
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
         mode: "0640"
@@ -109,15 +109,6 @@
         enabled: true
         daemon_reload: true
       loop: "{{ services }}"
-
-    - name: Deploy example broker config
-      ansible.builtin.copy:
-        src: "broker.yaml"
-        dest: "{{ target_directory }}/config/broker.yaml"
-        owner: "{{ target_user }}"
-        group: "{{ target_user }}"
-        mode: "0640"
-      notify: trigger_watchtog
 
     - name: Deploy example broker config
       ansible.builtin.template:
