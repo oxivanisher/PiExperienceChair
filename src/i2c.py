@@ -127,6 +127,10 @@ class MCP23017Controller(PiExpChair):
         self.logger.info("Received stop request. Disabling all outputs.")
         self.disable_outputs()
 
+    def shutdown(self):
+        self.logger.info("Received shutdown request. Disabling all outputs.")
+        self.disable_outputs()
+    
     def disable_outputs(self):
         self.logger.debug("Disabling all outputs.")
         for output_name in self.i2c_outputs:
