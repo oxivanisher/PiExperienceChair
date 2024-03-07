@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Seat config editor{% endblock %}
+{% block head %}
+  {{ super() }}
+    <style>
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 180px); /* Adjusted height */
+        }
+        .form-control {
+            flex-grow: 1;
+            resize: vertical;
+            width: 100%; /* Fill available width */
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="form-container">
+        {% if alert_message %}
+        <div class="alert alert-danger btn-sm" role="alert"><pre>{{ alert_message | safe }}</pre></div>
+        {% endif %}
+        <form method="post" action="/save_config" class="flex-grow-1">
+            <textarea id="config-textarea" class="form-control" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
+            <button class="btn btn-primary mt-3 btn-sm" type="submit">Save Config</button>
+        </form>
+    </div>
+    <script>
+        // Set textarea height to fill viewport height
+        document.addEventListener('DOMContentLoaded', function () {
+            var textarea = document.getElementById('config-textarea');
+            textarea.style.height = window.innerHeight - textarea.offsetTop - 90 + 'px'; // Adjust for padding and margin
+        });
+    </script>
+    <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+{% endblock %}

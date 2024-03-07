@@ -3,6 +3,8 @@ from piexpchair import PiExpChair, check_config_for_webui
 import os
 import signal
 import time
+import datetime
+
 
 from flask import Flask, request, render_template, redirect, url_for
 
@@ -17,17 +19,28 @@ def shutdown_server():
     return os.kill(os.getpid(), signal.SIGINT)
 
 
-# Routes for controlling PiExpChair
+# Main routes
 @app.route('/')
 def index():
+    return render_template('control.html')
+
+
+@app.route('/status')
+def status():
+    return render_template('status.html', mqtt_messages=pxc.last_messages)
+
+
+@app.route('/config')
+def config():
     result, message = check_config_for_webui()
     if result:
         alert_message = None
     else:
         alert_message = message
-    return render_template('index.html', config_content=config_content, alert_message=alert_message)
+    return render_template('config.html',  config_content=config_content, alert_message=alert_message)
 
 
+# Routes for controlling PiExpChair
 @app.route('/quit')
 def quit():
     pxc.send_quit()
@@ -81,6 +94,14 @@ def save_config():
     with open('config/config.yaml', 'w') as file:
         file.write(new_config_content)
     return redirect(url_for("index"))
+
+
+# Filters
+@app.template_filter('strftime')
+def _filter_datetime(timestamp, format=None):
+    if not format:
+        format = '%Y-%m-%d %H:%M:%S'
+    return datetime.datetime.fromtimestamp(timestamp).strftime(format)
 
 
 if __name__ == '__main__':

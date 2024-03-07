@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Seat status{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+  {% for topic in mqtt_messages %}
+  <h3>{{ topic }}</h3>
+  <ul>
+  {% for key, value in mqtt_messages[topic].items() | reverse %}
+    <li>{{ key | strftime }}: {{ value.decode('utf-8') }}</li>
+  {% endfor %}
+  </ul>
+  {% endfor %}
+{% endblock %}

@@ -24,8 +24,8 @@ ansible-playbook -i localhost install.yaml --ask-become-pass
 ## Idle animation notes
 How to create a idle animation video from a picture:
 ```bash
-convert "some_image.jpg_or.png" -verbose -resize 1920x1080 -background black -gravity center -extent 1920x1080 "/tmp/image_1.jpg"
-ffmpeg -y -framerate "0.01" -i "/tmp/image_%d.jpg" -c:v libx264 -r 30 -pix_fmt yuvj444p -preset veryslow -tune stillimage idle.mp4
+convert "some_image.jpg_or.png" -verbose -resize 1920x1080 -background white -gravity center -extent 1920x1080 "/tmp/image_1.jpg"
+ffmpeg -y -framerate "0.01" -i "/tmp/image_%d.jpg" -c:v libx264 -r 5 -pix_fmt yuvj444p -preset veryslow -tune stillimage idle.mp4
 ```
 ## Resources
 * Some inspiration for VLC: https://github.com/m1tk4/vlc-kiosk/blob/main/vlc-kiosk

@@ -103,6 +103,8 @@ class PiExpChair:
                                   f"{self.mqtt_client_id} offline", 0, False)
         self.mqtt_client.connect(self.mqtt_config['host'], self.mqtt_config['port'])
 
+        self.last_messages = {}
+
         if self.config:
             self.terminate = False
         else:
@@ -124,6 +126,13 @@ class PiExpChair:
     def on_message(self, client, userdata, msg):
         try:
             self.logger.debug(f"Received message on topic {msg.topic}: {msg.payload}")
+
+            if msg.topic not in self.last_messages.keys():
+                self.last_messages[msg.topic] = {}
+            self.last_messages[msg.topic][time.time()] = msg.payload
+            if len(self.last_messages[msg.topic]) > 10:
+                self.last_messages[msg.topic].pop(list(self.last_messages[msg.topic].keys())[0], None)
+
             if msg.topic == "%s/control" % self.mqtt_config['base_topic']:
                 if msg.payload.decode() == "quit":
                     self.logger.info("Received quit command")
