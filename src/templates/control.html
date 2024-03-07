@@ -2,19 +2,6 @@
 {% block title %}Seat control{% endblock %}
 {% block head %}
   {{ super() }}
-    <style>
-        .form-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 180px); /* Adjusted height */
-        }
-        .form-control {
-            flex-grow: 1;
-            resize: vertical;
-            width: 100%; /* Fill available width */
-        }
-    </style>
-  <meta http-equiv="refresh" content="5">
 {% endblock %}
 {% block content %}
     <h3>Multimedia control</h3>
@@ -60,5 +47,21 @@
         <li class="list-group-item">{{ date | strftime }}: {{ last_scenes[date] }}</li>
         {% endfor %}
     </ul>
+    <script>
+        function checkRouteAvailability() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '{{ url_for('index') }}', true);
+            xhr.onload = function() {
+                if (xhr.status == 200) {
+                    location.reload();
+                } else {
+                    setTimeout(checkRouteAvailability, 5000);
+                }
+            };
+            xhr.send();
+        }
 
+        // Call the function when the page loads
+        setTimeout(checkRouteAvailability, 5000);
+    </script>
 {% endblock %}

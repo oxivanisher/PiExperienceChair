@@ -1,7 +1,5 @@
 from piexpchair import PiExpChair, check_config_for_webui, config_schema, read_config
 
-import os
-import signal
 import time
 import datetime
 
@@ -9,10 +7,6 @@ import datetime
 from flask import Flask, request, render_template, redirect, url_for
 
 app = Flask(__name__)
-
-
-def shutdown_server():
-    return os.kill(os.getpid(), signal.SIGINT)
 
 
 # Main routes
@@ -91,13 +85,6 @@ def config():
 
 
 # Routes for controlling PiExpChair
-@app.route('/quit')
-def quit():
-    pxc.send_quit()
-    shutdown_server()
-    return redirect(url_for("index"))
-
-
 @app.route('/play')
 def play():
     pxc.send_play()
@@ -122,12 +109,20 @@ def prev():
     return redirect(url_for("index"))
 
 
+@app.route('/quit')
+def quit():
+    pxc.send_quit()
+    alert_message = "Please wait, all services (excluding WebUi and VLC) are being restarted."
+    return render_template('wait.html', alert_message=alert_message)
+
+
 @app.route('/force_restart')
 def force_restart():
     pxc.send_stop()
     with open("tmp/force_restart", "w") as text_file:
         text_file.write("Force restart requested %s" % time.time())
-    return redirect(url_for("index"))
+    alert_message = "Please wait, all services (including WebUi and VLC) are being restarted."
+    return render_template('wait.html', alert_message=alert_message)
 
 
 @app.route('/reboot_computer')
@@ -135,7 +130,8 @@ def reboot_computer():
     pxc.send_reboot()
     with open("tmp/reboot_computer", "w") as text_file:
         text_file.write("Force system reboot from webui at %s" % time.time())
-    return redirect(url_for("index"))
+    alert_message = "Please wait, the computer is rebooting"
+    return render_template('wait.html', alert_message=alert_message)
 
 
 @app.route('/shutdown_computer')
@@ -143,7 +139,8 @@ def shutdown_computer():
     pxc.send_shutdown()
     with open("tmp/shutdown_computer", "w") as text_file:
         text_file.write("Force system shutdown from webui at %s" % time.time())
-    return redirect(url_for("index"))
+    alert_message = "The computer is shut down."
+    return render_template('wait.html', alert_message=alert_message)
 
 
 # Routes for managing YAML configuration file

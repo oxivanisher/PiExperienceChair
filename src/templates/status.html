@@ -23,4 +23,21 @@
   {% endfor %}
   </ul>
   {% endif %}
+  <script>
+      function checkRouteAvailability() {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', '{{ url_for('status') }}', true);
+          xhr.onload = function() {
+              if (xhr.status == 200) {
+                  location.reload();
+              } else {
+                  setTimeout(checkRouteAvailability, 5000);
+              }
+          };
+          xhr.send();
+      }
+
+      // Call the function when the page loads
+      setTimeout(checkRouteAvailability, 5000);
+  </script>
 {% endblock %}
