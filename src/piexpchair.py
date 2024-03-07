@@ -192,6 +192,10 @@ class PiExpChair:
         self.logger.info("Sending prev command")
         self._send_control_command("prev")
 
+    def send_reboot(self):
+        self.logger.info("Sending reboot command")
+        self._send_control_command("reboot")
+
     def send_shutdown(self):
         self.logger.info("Sending shutdown command")
         self._send_control_command("shutdown")

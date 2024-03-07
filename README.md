@@ -30,3 +30,10 @@ ffmpeg -y -framerate "0.01" -i "/tmp/image_%d.jpg" -c:v libx264 -r 5 -pix_fmt yu
 ## Resources
 * Some inspiration for VLC: https://github.com/m1tk4/vlc-kiosk/blob/main/vlc-kiosk
 * This repository is redistributing bootstrap since it's build to be run without internet. Thanks https://getbootstrap.com <3
+
+## File based triggers
+Watchdog service events can be triggered by creating files in `tmp/`. This is mainly done, so that the unprivileged user can trigger events with root permissions.
+* `force_restart`: Restart all services and VLC
+* `vlc_debug`: Let VLC log to `/tmp/vlc.log` (a force_restart is required)
+* `reboot_computer`: Reboot the computer
+* `shutdown_computer`: Shuts the computer down

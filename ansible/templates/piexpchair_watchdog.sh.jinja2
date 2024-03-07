@@ -6,6 +6,7 @@
 
 KILL_FILE="{{ target_directory }}/tmp/force_restart"
 SHUTDOWN_FILE="{{ target_directory }}/tmp/shutdown_computer"
+REBOOT_FILE="{{ target_directory }}/tmp/reboot_computer"
 
 while true;
 do
@@ -26,6 +27,11 @@ do
     echo "Found shutdownfile $SHUTDOWN_FILE, shutting system down"
     rm $SHUTDOWN_FILE
     systemctl poweroff
+  elif [ -f "$REBOOT_FILE" ];
+  then
+    echo "Found rebootfile $REBOOT_FILE, rebooting system"
+    rm $REBOOT_FILE
+    systemctl reboot
   else
     sleep 1
   fi

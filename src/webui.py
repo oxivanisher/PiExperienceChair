@@ -130,6 +130,14 @@ def force_restart():
     return redirect(url_for("index"))
 
 
+@app.route('/reboot_computer')
+def reboot_computer():
+    pxc.send_reboot()
+    with open("tmp/reboot_computer", "w") as text_file:
+        text_file.write("Force system reboot from webui at %s" % time.time())
+    return redirect(url_for("index"))
+
+
 @app.route('/shutdown_computer')
 def shutdown_computer():
     pxc.send_shutdown()
