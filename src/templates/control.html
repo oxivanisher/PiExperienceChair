@@ -51,8 +51,8 @@
 
     <h3>Last scenes played</h3>
     <ul class="list-group list-group-flush">
-        {% for scene in last_scenes %}
-        <li class="list-group-item">{{ scene.date | strftime }}: scene.name</li>
+        {% for date in last_scenes %}
+        <li class="list-group-item">{{ date | strftime }}: {{ last_scenes[date] }}</li>
         {% endfor %}
     </ul>
 

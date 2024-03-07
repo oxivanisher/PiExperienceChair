@@ -25,35 +25,43 @@ def index():
     last_scenes = {}
     current_scene = "¯\_(ツ)_/¯"
 
-    try:
-        filtered_scenes = []
-        last_idle = 0.0
-        last_scene_date = 0.0
-        last_scene_index = 0
-        for topic in pxc.last_messages.keys():
-            if topic == "%s/videoplayer/scene" % pxc.mqtt_config['base_topic']:
-                for message in pxc.last_messages[topic][-5:]:
-                    filtered_scenes.append(message)
-            if topic == "%s/videoplayer/idle" % pxc.mqtt_config['base_topic']:
-                for key, message in pxc.last_messages[topic][-1]:
-                    last_idle = key
+    # try:
+    config_content = read_config('config/config.yaml', pxc.logger, config_schema)
+    extracted_scenes = []
+    last_idle = 0.0
+    last_scene_date = 0.0
+    last_scene_index = 0
+    for topic in pxc.last_messages.keys():
+        print("topic", topic)
 
-        for key, message in reversed(filtered_scenes):
-            last_scenes[key] = message
-            if key > last_scene_date:
-                last_scene_date = key
-                last_scene_index = int(message)
+        if topic == "%s/videoplayer/scene" % pxc.mqtt_config['base_topic']:
+            print("aa", pxc.last_messages[topic])
+            for date in pxc.last_messages[topic]:
+                extracted_scenes.append((date, pxc.last_messages[topic][date]))
+        if topic == "%s/videoplayer/idle" % pxc.mqtt_config['base_topic']:
+            for key, _ in pxc.last_messages[topic]:
+                last_idle = key
+                print("last idle", key)
 
-        if last_idle > last_scene_date:
-            current_scene = "Idle"
-        elif last_idle == last_scene_date:
-            pass
-        else:
-            config_content = read_config('config/config.yaml', pxc.logger, config_schema)
-            current_scene = config_content['scenes'][last_scene_index]['name']
+    for date, scene_index in reversed(extracted_scenes):
+        print("date/message", date, scene_index)
+        last_scenes[date] = config_content['scenes'][int(scene_index)]['name']
+        if date > last_scene_date:
+            last_scene_date = date
+            last_scene_index = int(scene_index)
 
-    except Exception as e:
+    if last_idle > last_scene_date:
+        current_scene = "Idle"
+    elif last_idle == last_scene_date:
         pass
+    else:
+        current_scene = config_content['scenes'][last_scene_index]['name']
+
+    print("last scenes", last_scenes)
+    print("current scene", current_scene)
+
+    # except Exception as e:
+    #     pass
 
     return render_template('control.html', last_scenes=last_scenes, current_scene=current_scene)
 
