@@ -69,11 +69,13 @@ class MCP23017Controller(PiExpChair):
                     if 0 <= scene_index < len(self.config['scenes']):
                         self.logger.info(f"Received scene index {scene_index} to play")
                         self.play_scene(scene_index)
+                        self.mqtt_client.publish("%s/i2c/scene" % self.mqtt_config['base_topic'], scene_index)
                     else:
                         self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
 
             elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
                 self.logger.info("Received idle scene command")
+                self.mqtt_client.publish("%s/i2c/idle" % self.mqtt_config['base_topic'], "")
                 self.disable_outputs()
 
         except Exception as e:

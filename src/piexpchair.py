@@ -71,7 +71,7 @@ def read_config(file_path, logger, schema_config):
 
 
 class PiExpChair:
-    def __init__(self):
+    def __init__(self, subscribe_to_everything=False):
         self.logger = logging
 
         self.logger.info(f"Initializing PiExpChair module {self.__class__.__name__}")
@@ -104,13 +104,22 @@ class PiExpChair:
         self.mqtt_client.connect(self.mqtt_config['host'], self.mqtt_config['port'])
 
         self.last_messages = {}
+        self.subscribe_to_everything = subscribe_to_everything
 
         if self.config:
             self.terminate = False
         else:
             self.terminate = True
 
-    # MQTT callback functions
+    # MQTT helper methods
+    def log_mqtt_message(self, msg):
+        if msg.topic not in self.last_messages.keys():
+            self.last_messages[msg.topic] = {}
+        self.last_messages[msg.topic][time.time()] = msg.payload
+        if len(self.last_messages[msg.topic]) > 10:
+            self.last_messages[msg.topic].pop(list(self.last_messages[msg.topic].keys())[0], None)
+
+    # MQTT callback methods
     def on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code.is_failure:
             self.logger.warning(f"Failed to connect, return code: {reason_code}")
@@ -119,6 +128,11 @@ class PiExpChair:
             self.logger.debug("Successfully connected to MQTT Broker")
             self.mqtt_subscribe(client, "control")
 
+            if self.subscribe_to_everything:
+                self.mqtt_subscribe(client, "videoplayer/#")
+                self.mqtt_subscribe(client, "i2c/#")
+
+
             self.mqtt_client.publish("%s/status" % self.mqtt_config['base_topic'],
                                      f"{self.mqtt_client_id} online")
             return True
@@ -126,12 +140,7 @@ class PiExpChair:
     def on_message(self, client, userdata, msg):
         try:
             self.logger.debug(f"Received message on topic {msg.topic}: {msg.payload}")
-
-            if msg.topic not in self.last_messages.keys():
-                self.last_messages[msg.topic] = {}
-            self.last_messages[msg.topic][time.time()] = msg.payload
-            if len(self.last_messages[msg.topic]) > 10:
-                self.last_messages[msg.topic].pop(list(self.last_messages[msg.topic].keys())[0], None)
+            self.log_mqtt_message(msg)
 
             if msg.topic == "%s/control" % self.mqtt_config['base_topic']:
                 if msg.payload.decode() == "quit":
