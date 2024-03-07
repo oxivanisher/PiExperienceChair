@@ -5,7 +5,7 @@
 {% endblock %}
 {% block content %}
   <h2>MQTT messages (last 10 per topic)</h2>
-  {% for topic in mqtt_messages %}
+  {% for topic in mqtt_messages | sort %}
   <h3>{{ topic }}</h3>
   <ul class="list-group list-group-flush">
   {% for key, value in mqtt_messages[topic].items() | reverse %}
