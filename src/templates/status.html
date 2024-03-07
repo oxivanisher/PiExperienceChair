@@ -34,10 +34,11 @@
                   setTimeout(checkRouteAvailability, 5000);
               }
           };
+          xhr.onerror = function() {
+              setTimeout(checkRouteAvailability, 5000);
+          };
           xhr.send();
       }
-
-      // Call the function when the page loads
       setTimeout(checkRouteAvailability, 5000);
   </script>
 {% endblock %}
