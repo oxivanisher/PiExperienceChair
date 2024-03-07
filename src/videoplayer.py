@@ -48,7 +48,7 @@ class VideoPlayer(PiExpChair):
             current_file = os.path.join(self.config['videoplayer']['media_path'],
                                         scene['file'])
             self.send_vlc_command("enqueue " + current_file)
-        self.mqtt_client.publish("%s/videoplayer/idle" % self.mqtt_config['base_topic'], "")
+        self.mqtt_client.publish("%s/videoplayer/idle" % self.mqtt_config['base_topic'], "idle")
 
     def stop_videoplayer(self):
         self.logger.info("Stopping video player")

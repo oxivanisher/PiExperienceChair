@@ -75,7 +75,7 @@ class MCP23017Controller(PiExpChair):
 
             elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
                 self.logger.info("Received idle scene command")
-                self.mqtt_client.publish("%s/i2c/idle" % self.mqtt_config['base_topic'], "")
+                self.mqtt_client.publish("%s/i2c/idle" % self.mqtt_config['base_topic'], "idle")
                 self.disable_outputs()
 
         except Exception as e:

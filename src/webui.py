@@ -1,4 +1,4 @@
-from piexpchair import PiExpChair, check_config_for_webui
+from piexpchair import PiExpChair, check_config_for_webui, config_schema, read_config
 
 import os
 import signal
@@ -27,7 +27,10 @@ def index():
 
 @app.route('/status')
 def status():
-    return render_template('status.html', mqtt_messages=pxc.last_messages)
+    return render_template('status.html',
+                           config_content=read_config('config/config.yaml',
+                           pxc.logger, config_schema),
+                           mqtt_messages=pxc.last_messages)
 
 
 @app.route('/config')
@@ -37,7 +40,7 @@ def config():
         alert_message = None
     else:
         alert_message = message
-    return render_template('config.html',  config_content=config_content, alert_message=alert_message)
+    return render_template('config.html', config_content=config_content, alert_message=alert_message)
 
 
 # Routes for controlling PiExpChair
@@ -79,12 +82,14 @@ def force_restart():
         text_file.write("Force restart requested %s" % time.time())
     return redirect(url_for("index"))
 
+
 @app.route('/shutdown_computer')
 def shutdown_computer():
     pxc.send_shutdown()
     with open("tmp/shutdown_computer", "w") as text_file:
         text_file.write("Force system shutdown from webui at %s" % time.time())
     return redirect(url_for("index"))
+
 
 # Routes for managing YAML configuration file
 @app.route('/save_config', methods=['POST'])
