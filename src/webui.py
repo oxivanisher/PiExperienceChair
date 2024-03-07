@@ -46,6 +46,8 @@ def index():
 
         if last_idle > last_scene_date:
             current_scene = "Idle"
+        elif last_idle == last_scene_date:
+            pass
         else:
             config_content = read_config('config/config.yaml', pxc.logger, config_schema)
             current_scene = config_content['scenes'][last_scene_index]['name']
