@@ -17,9 +17,6 @@
 {% endblock %}
 {% block content %}
     <div class="form-container">
-        {% if alert_message %}
-        <div class="alert alert-danger btn-sm" role="alert"><pre>{{ alert_message | safe }}</pre></div>
-        {% endif %}
         <form method="post" action="/save_config" class="flex-grow-1">
             <textarea id="config-textarea" class="form-control" name="config" placeholder="Enter config here...">{{ config_content }}</textarea>
             <button class="btn btn-primary mt-3 btn-sm" type="submit">Save Config</button>

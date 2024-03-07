@@ -33,6 +33,9 @@
       </li>
     </ul>
   <br />
+  {% if alert_message %}
+  <div class="alert alert-danger btn-sm" role="alert"><pre>{{ alert_message | safe }}</pre></div>
+  {% endif %}
 {% block content %}{% endblock %}
 </div>
 </body>

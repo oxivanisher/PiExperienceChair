@@ -10,10 +10,6 @@ from flask import Flask, request, render_template, redirect, url_for
 
 app = Flask(__name__)
 
-# Load config.yaml content
-with open('config/config.yaml', 'r') as file:
-    config_content = file.read()
-
 
 def shutdown_server():
     return os.kill(os.getpid(), signal.SIGINT)
@@ -25,53 +21,57 @@ def index():
     last_scenes = {}
     current_scene = "¯\_(ツ)_/¯"
 
-    # try:
-    config_content = read_config('config/config.yaml', pxc.logger, config_schema)
-    extracted_scenes = []
-    last_idle = 0.0
-    last_scene_date = 0.0
-    last_scene_index = 0
-    for topic in pxc.last_messages.keys():
-        print("topic", topic)
+    result, message = check_config_for_webui()
+    if result:
+        current_config_content = read_config('config/config.yaml', pxc.logger, config_schema)
+        alert_message = None
+        extracted_scenes = []
+        last_idle = 0.0
+        last_scene_date = 0.0
+        last_scene_index = 0
+        for topic in pxc.last_messages.keys():
+            if topic == "%s/videoplayer/scene" % pxc.mqtt_config['base_topic']:
+                for date in pxc.last_messages[topic]:
+                    extracted_scenes.append((date, pxc.last_messages[topic][date]))
+            if topic == "%s/videoplayer/idle" % pxc.mqtt_config['base_topic']:
+                for date in pxc.last_messages[topic]:
+                    last_idle = date
 
-        if topic == "%s/videoplayer/scene" % pxc.mqtt_config['base_topic']:
-            print("aa", pxc.last_messages[topic])
-            for date in pxc.last_messages[topic]:
-                extracted_scenes.append((date, pxc.last_messages[topic][date]))
-        if topic == "%s/videoplayer/idle" % pxc.mqtt_config['base_topic']:
-            for key, _ in pxc.last_messages[topic]:
-                last_idle = key
-                print("last idle", key)
+        for date, scene_index in reversed(extracted_scenes):
+            last_scenes[date] = current_config_content['scenes'][int(scene_index)]['name']
+            if date > last_scene_date:
+                last_scene_date = date
+                last_scene_index = int(scene_index)
 
-    for date, scene_index in reversed(extracted_scenes):
-        print("date/message", date, scene_index)
-        last_scenes[date] = config_content['scenes'][int(scene_index)]['name']
-        if date > last_scene_date:
-            last_scene_date = date
-            last_scene_index = int(scene_index)
-
-    if last_idle > last_scene_date:
-        current_scene = "Idle"
-    elif last_idle == last_scene_date:
-        pass
+        if last_idle > last_scene_date:
+            current_scene = "Idle"
+        elif last_idle == last_scene_date:
+            pass
+        else:
+            current_scene = current_config_content['scenes'][last_scene_index]['name']
     else:
-        current_scene = config_content['scenes'][last_scene_index]['name']
+        alert_message = message
 
-    print("last scenes", last_scenes)
-    print("current scene", current_scene)
-
-    # except Exception as e:
-    #     pass
-
-    return render_template('control.html', last_scenes=last_scenes, current_scene=current_scene)
+    return render_template('control.html',
+                           last_scenes=last_scenes,
+                           current_scene=current_scene,
+                           alert_message=alert_message)
 
 
 @app.route('/status')
 def status():
+    result, message = check_config_for_webui()
+    if result:
+        alert_message = None
+        current_config_content = read_config('config/config.yaml', pxc.logger, config_schema)
+    else:
+        alert_message = message
+        current_config_content = {}
+
     return render_template('status.html',
-                           config_content=read_config('config/config.yaml',
-                           pxc.logger, config_schema),
-                           mqtt_messages=pxc.last_messages)
+                           config_content=current_config_content,
+                           mqtt_messages=pxc.last_messages,
+                           alert_message=alert_message)
 
 
 @app.route('/config')
@@ -81,7 +81,13 @@ def config():
         alert_message = None
     else:
         alert_message = message
-    return render_template('config.html', config_content=config_content, alert_message=alert_message)
+
+    with open('config/config.yaml', 'r') as file:
+        current_config_content = file.read()
+
+    return render_template('config.html',
+                           config_content=current_config_content,
+                           alert_message=alert_message)
 
 
 # Routes for controlling PiExpChair
