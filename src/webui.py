@@ -22,7 +22,38 @@ def shutdown_server():
 # Main routes
 @app.route('/')
 def index():
-    return render_template('control.html')
+    last_scenes = {}
+    current_scene = "¯\_(ツ)_/¯"
+
+    try:
+        filtered_scenes = []
+        last_idle = 0.0
+        last_scene_date = 0.0
+        last_scene_index = 0
+        for topic in pxc.last_messages.keys():
+            if topic == "%s/videoplayer/scene" % pxc.mqtt_config['base_topic']:
+                for message in pxc.last_messages[topic][-5:]:
+                    filtered_scenes.append(message)
+            if topic == "%s/videoplayer/idle" % pxc.mqtt_config['base_topic']:
+                for key, message in pxc.last_messages[topic][-1]:
+                    last_idle = key
+
+        for key, message in reversed(filtered_scenes):
+            last_scenes[key] = message
+            if key > last_scene_date:
+                last_scene_date = key
+                last_scene_index = int(message)
+
+        if last_idle > last_scene_date:
+            current_scene = "Idle"
+        else:
+            config_content = read_config('config/config.yaml', pxc.logger, config_schema)
+            current_scene = config_content['scenes'][last_scene_index]['name']
+
+    except Exception as e:
+        pass
+
+    return render_template('control.html', last_scenes=last_scenes, current_scene=current_scene)
 
 
 @app.route('/status')

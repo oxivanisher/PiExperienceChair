@@ -14,6 +14,7 @@
             width: 100%; /* Fill available width */
         }
     </style>
+  <meta http-equiv="refresh" content="5">
 {% endblock %}
 {% block content %}
     <h3>Multimedia control</h3>
@@ -44,4 +45,15 @@
             <button class="btn btn-danger btn-sm" type="submit" name="action" value="force_restart">Shutdown Pi</button>
         </form>
     </div>
+
+    <h3>Current scene</h3>
+    {{ current_scene }}
+
+    <h3>Last scenes played</h3>
+    <ul class="list-group list-group-flush">
+        {% for scene in last_scenes %}
+        <li class="list-group-item">{{ scene.date | strftime }}: scene.name</li>
+        {% endfor %}
+    </ul>
+
 {% endblock %}
