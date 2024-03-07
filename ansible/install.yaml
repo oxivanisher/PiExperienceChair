@@ -56,6 +56,11 @@
       become: true
       become_user: root
 
+    - name: Install vmtouch to precache video files
+      ansible.builtin.package:
+        name: vmtouch
+        state: present
+
     - name: Deploy vlc script
       ansible.builtin.template:
         src: "vlc_kiosk.sh.jinja2"
