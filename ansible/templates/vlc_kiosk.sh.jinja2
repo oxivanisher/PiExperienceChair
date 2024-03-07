@@ -3,6 +3,9 @@
 
 echo "Trigger the watchdog to restart all daemons once vlc is started"
 echo "System startup daemon reload requested" > {{ target_directory }}/tmp/force_restart
+echo "Wait 5 seconds for audio devices to be ready"
+sleep 5
+clear
 
 while true;
 do
