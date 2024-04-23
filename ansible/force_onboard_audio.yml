@@ -12,7 +12,6 @@
     path: "/boot/firmware/config.txt"
     line: "hdmi_ignore_edid_audio=1"
     regexp: "^hdmi_ignore_edid_audio="
-  when: ansible_distribution == "Raspbian"
   notify: Reboot_pi
   become: true
   become_user: root
@@ -22,7 +21,6 @@
     path: "/boot/firmware/config.txt"
     line: "dtparam=audio=on"
     regexp: "^dtparam=audio="
-  when: ansible_distribution == "Raspbian"
   notify: Reboot_pi
   become: true
   become_user: root
