@@ -1,7 +1,7 @@
 ---
 - name: Configure localhost
   hosts: localhost
-  become: yes
+  become: true
   vars:
     target_user: "pi"
     target_directory: "/home/{{ target_user }}/PiExperienceChair"
@@ -10,6 +10,7 @@
       - piexpchair_videoplayer.service
       - piexpchair_webui.service
       - piexpchair_watchdog.service
+    force_hdmi: false
 
   tasks:
     - name: Ensure i2c is enabled on Raspberry Pi
@@ -18,7 +19,7 @@
         line: "dtparam=i2c_arm=on"
         state: present
       when: ansible_distribution == "Raspbian"
-      notify: reboot_pi
+      notify: Reboot_pi
       become: true
       become_user: root
 
@@ -70,7 +71,7 @@
         mode: "0750"
       become: true
       become_user: root
-      notify: restart_lightdm
+      notify: Restart_lightdm
 
     - name: Ensure default media folder for piexpchair exists
       ansible.builtin.file:
@@ -87,7 +88,7 @@
         mode: '0750'
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
-      notify: restart_lightdm
+      notify: Restart_lightdm
 
     - name: Deploy autostart file for user
       ansible.builtin.copy:
@@ -96,7 +97,7 @@
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
         mode: "0640"
-      notify: restart_lightdm
+      notify: Restart_lightdm
 
     - name: Deploy systemd service files
       ansible.builtin.template:
@@ -122,29 +123,30 @@
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
         mode: "0640"
-      notify: trigger_watchtog
+      notify: Trigger_watchtog
 
-    - name: Disable onboard audio since VLC is too stupid
-      ansible.builtin.copy:
-        content: "blacklist snd_bcm2835"
-        dest: "/etc/modprobe.d/alsa-blacklist.conf"
-        owner: root
-        group: root
-        mode: "0644"
-      notify: reboot_pi
+    - name: Force HDMI output
+      ansible.builtin.import_tasks:
+        file: force_hdmi.yml
+      when: force_hdmi
+
+    - name: Force onboard output
+      ansible.builtin.import_tasks:
+        file: force_onboard_audio.yml
+      when: not force_hdmi
 
   handlers:
-    - name: reboot_pi
+    - name: Reboot_pi
       ansible.builtin.reboot:
       become: true
       become_user: root
 
-    - name: restart_lightdm
+    - name: Restart_lightdm
       ansible.builtin.systemd_service:
         name: lightdm
         state: restarted
 
-    - name: trigger_watchtog
+    - name: Trigger_watchtog
       ansible.builtin.copy:
         content: 'Force restart requested from ansible'
         dest: "{{ target_directory }}/tmp/force_restart"

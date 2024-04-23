@@ -8,7 +8,7 @@ There is an ansible playbook to install and setup everything. Run the following 
 sudo apt install ansible
 git clone https://github.com/oxivanisher/PiExperienceChair.git
 cd PiExperienceChair/ansible
-ansible-playbook -i localhost install.yaml --ask-become-pass
+ansible-playbook -i localhost install.yml --ask-become-pass
 ```
 
 ## Tool notes

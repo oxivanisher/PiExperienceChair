@@ -1,0 +1,28 @@
+---
+- name: Do not disable onboard audio
+  ansible.builtin.file:
+    path: "/etc/modprobe.d/alsa-blacklist.conf"
+    state: absent
+  notify: Reboot_pi
+  become: true
+  become_user: root
+
+- name: Ensure HDMI does not report audio capability
+  ansible.builtin.lineinfile:
+    path: "/boot/firmware/config.txt"
+    line: "hdmi_ignore_edid_audio=1"
+    regexp: "^hdmi_ignore_edid_audio="
+  when: ansible_distribution == "Raspbian"
+  notify: Reboot_pi
+  become: true
+  become_user: root
+
+- name: Force the usage of the onboard audio device
+  ansible.builtin.lineinfile:
+    path: "/boot/firmware/config.txt"
+    line: "dtparam=audio=on"
+    regexp: "^dtparam=audio="
+  when: ansible_distribution == "Raspbian"
+  notify: Reboot_pi
+  become: true
+  become_user: root
