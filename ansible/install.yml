@@ -125,6 +125,10 @@
         mode: "0640"
       notify: Trigger_watchtog
 
+    - name: Debug var
+      ansible.builtin.debug:
+        msg: "force_hdmi is {{ force_hdmi }}"
+
     - name: Force HDMI output
       ansible.builtin.import_tasks: force_hdmi.yml
       when:
