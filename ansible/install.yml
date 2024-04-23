@@ -126,13 +126,11 @@
       notify: Trigger_watchtog
 
     - name: Force HDMI output
-      ansible.builtin.include_tasks:
-        file: force_hdmi.yml
+      ansible.builtin.import_tasks: force_hdmi.yml
       when: force_hdmi
 
     - name: Force onboard output
-      ansible.builtin.include_tasks:
-        file: force_onboard_audio.yml
+      ansible.builtin.import_tasks: force_onboard_audio.yml
       when: not force_hdmi
 
   handlers:
