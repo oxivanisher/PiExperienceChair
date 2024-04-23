@@ -127,15 +127,11 @@
 
     - name: Force HDMI output
       ansible.builtin.import_tasks: force_hdmi.yml
-      when:
-        - force_hdmi | bool
-        - ansible_distribution == "Raspbian"
+      when: force_hdmi | bool
 
     - name: Force onboard output
       ansible.builtin.import_tasks: force_onboard_audio.yml
-      when:
-        - not force_hdmi | bool
-        - ansible_distribution == "Raspbian"
+      when: not force_hdmi | bool
 
   handlers:
     - name: Reboot_pi
