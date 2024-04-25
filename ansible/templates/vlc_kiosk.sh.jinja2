@@ -20,7 +20,7 @@ do
   else
     VLC_DEBUG=""
   fi
-  /usr/bin/vlc --fullscreen --no-video-title-show --quiet-synchro --no-qt-fs-controller --disable-screensaver -I oldrc --rc-unix /tmp/vlc_rc.sock --alsa-audio-device hw:{{ audio_device }} "$VLC_DEBUG"
+  /usr/bin/vlc --fullscreen --no-video-title-show --quiet-synchro --no-qt-fs-controller --disable-screensaver -I oldrc --rc-unix /tmp/vlc_rc.sock -A alsa --alsa-audio-device hw:{{ audio_device }} "$VLC_DEBUG"
   echo "$(date) VLC ended. Restarting it in 1 second."
   sleep .1
 done
