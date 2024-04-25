@@ -62,17 +62,6 @@
         name: vmtouch
         state: present
 
-    - name: Deploy vlc script
-      ansible.builtin.template:
-        src: "vlc_kiosk.sh.jinja2"
-        dest: "/usr/local/bin/vlc_kiosk.sh"
-        owner: "{{ target_user }}"
-        group: "{{ target_user }}"
-        mode: "0750"
-      become: true
-      become_user: root
-      notify: Restart_lightdm
-
     - name: Ensure default media folder for piexpchair exists
       ansible.builtin.file:
         path: "/home/{{ target_user }}/media/"
@@ -132,6 +121,17 @@
     - name: Force onboard output
       ansible.builtin.import_tasks: force_onboard_audio.yml
       when: not force_hdmi | bool
+
+    - name: Deploy vlc script
+      ansible.builtin.template:
+        src: "vlc_kiosk.sh.jinja2"
+        dest: "/usr/local/bin/vlc_kiosk.sh"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0750"
+      become: true
+      become_user: root
+      notify: Restart_lightdm
 
   handlers:
     - name: Reboot_pi

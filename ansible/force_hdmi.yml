@@ -27,3 +27,7 @@
   notify: Reboot_pi
   become: true
   become_user: root
+
+- name: Set audio output device in vlc script to HDMI
+  ansible.builtin.set_fact:
+    audio_device: "0,0"
