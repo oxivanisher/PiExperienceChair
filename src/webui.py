@@ -13,7 +13,7 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     last_scenes = {}
-    current_scene = "¯\_(ツ)_/¯"
+    current_scene = "¯\\_(ツ)_/¯"
 
     result, message = check_config_for_webui()
     if result:

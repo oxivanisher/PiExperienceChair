@@ -3,7 +3,7 @@
   hosts: localhost
   become: true
   vars:
-    target_user: "pi"
+    target_user: "{{ lookup('env', 'USER') }}"
     target_directory: "/home/{{ target_user }}/PiExperienceChair"
     services:
       - piexpchair_i2c.service
