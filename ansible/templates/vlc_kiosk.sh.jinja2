@@ -1,6 +1,8 @@
 #!/bin/bash
 # {{ ansible_managed }}
 
+VLC_AUDIO_DEVICE="{{ vlc_audio_device }}"
+
 echo "$(date) Loading media files to RAM for fast playback..."
 vmtouch -t /home/{{ target_user }}/media/
 
@@ -11,16 +13,21 @@ echo "$(date) Wait 3 seconds for audio devices to be ready"
 sleep 3
 clear
 
+VLC_AUDIO=""
+if [ "$VLC_AUDIO_DEVICE" ];
+then
+  VLC_AUDIO="-A alsa --alsa-audio-device $VLC_AUDIO_DEVICE"
+fi
+
 while true;
 do
   echo "$(date) Starting VLC"
+  VLC_DEBUG=""
   if [ -f "{{ target_directory }}/tmp/vlc_debug" ];
   then
-    VLC_DEBUG="--logfile=/tmp/vlc.log --log-verbose=3"
-  else
-    VLC_DEBUG=""
+    VLC_DEBUG="--file-logging --logfile=/tmp/vlc.log --log-verbose=3"
   fi
-  /usr/bin/vlc --fullscreen --no-video-title-show --quiet-synchro --no-qt-fs-controller --disable-screensaver -I oldrc --rc-unix /tmp/vlc_rc.sock -A alsa --alsa-audio-device hw:{{ audio_device }} "$VLC_DEBUG"
+  /usr/bin/vlc --fullscreen --no-video-title-show --quiet-synchro --no-qt-fs-controller --disable-screensaver -I oldrc --rc-unix /tmp/vlc_rc.sock $VLC_AUDIO $VLC_DEBUG
   echo "$(date) VLC ended. Restarting it in 1 second."
   sleep .1
 done
