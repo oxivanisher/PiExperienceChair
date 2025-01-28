@@ -45,11 +45,13 @@ def index():
             current_scene = current_config_content['scenes'][last_scene_index]['name']
     else:
         alert_message = message
+        current_config_content = {}
 
     return render_template('control.html',
                            last_scenes=last_scenes,
                            current_scene=current_scene,
-                           alert_message=alert_message)
+                           alert_message=alert_message,
+                           config_content=current_config_content)
 
 
 @app.route('/status')
@@ -88,6 +90,12 @@ def config():
 @app.route('/play')
 def play():
     pxc.send_play()
+    return redirect(url_for("index"))
+
+
+@app.route('/play_single/<int:scene_index>')
+def play_single(scene_index):
+    pxc.mqtt_client.publish("%s/videoplayer/play_single" % pxc.mqtt_config['base_topic'], scene_index)
     return redirect(url_for("index"))
 
 
@@ -152,6 +160,55 @@ def save_config():
         file.write(new_config_content)
     return redirect(url_for("index"))
 
+
+# Add this new route for the player interface
+@app.route('/player')
+def player():
+    result, message = check_config_for_webui()
+    if result:
+        current_config_content = read_config('config/config.yaml', pxc.logger, config_schema)
+        alert_message = None
+    else:
+        alert_message = message
+        current_config_content = {}
+
+    return render_template('player.html',
+                           config_content=current_config_content)
+
+
+# Add this route for getting the current scene state
+@app.route('/get_current_scene')
+def get_current_scene():
+    current_scene = "Idle"
+    scene_index = None
+
+    if not hasattr(pxc, 'last_messages'):
+        return jsonify({'scene': current_scene, 'scene_index': scene_index})
+
+    last_idle = 0.0
+    last_scene_date = 0.0
+    last_scene_index = None
+
+    for topic in pxc.last_messages:
+        if topic == "%s/videoplayer/scene" % pxc.mqtt_config['base_topic']:
+            for date in pxc.last_messages[topic]:
+                if date > last_scene_date:
+                    last_scene_date = date
+                    last_scene_index = int(pxc.last_messages[topic][date])
+        if topic == "%s/videoplayer/idle" % pxc.mqtt_config['base_topic']:
+            for date in pxc.last_messages[topic]:
+                if date > last_idle:
+                    last_idle = date
+
+    if last_idle > last_scene_date:
+        current_scene = "Idle"
+        scene_index = None
+    else:
+        current_config_content = read_config('config/config.yaml', pxc.logger, config_schema)
+        current_scene = current_config_content['scenes'][last_scene_index]['name']
+        scene_index = last_scene_index
+
+    return jsonify({'scene': current_scene, 'scene_index': scene_index})
 
 # Filters
 @app.template_filter('strftime')

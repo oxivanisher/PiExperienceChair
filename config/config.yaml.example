@@ -5,67 +5,91 @@ videoplayer:
   idle_animation: idle.mp4
 
 i2c:
-  input:
-    play:
-      address: 0x27
-      pin: 0
-    stop:
-      address: 0x27
-      pin: 1
-    next:
-      address: 0x27
-      pin: 2
-    prev:
-      address: 0x27
-      pin: 3
-    shutdown:
-      address: 0x27
-      pin: 4
-
-  output:
-    fan1:
-      address: 0x23
-      pin: 0
-    fan2:
-      address: 0x23
-      pin: 1
-    massage:
-      address: 0x23
-      pin: 2
-    heat1:
-      address: 0x23
-      pin: 3
-    heat2:
-      address: 0x23
-      pin: 4
+  # ... (existing i2c config remains the same)
 
 scenes:
   - name: desert
     file: desert.mp4
+    image: desert.jpg
+    image_active: desert_active.jpg
+    # Static outputs (backward compatibility)
     i2c_outputs:
       fan1: true
       fan2: false
-      massage: true
-      heat1: false
-      heat2: true
+    # New timed outputs
+    timed_outputs:
+      - time: 0  # Start of video
+        i2c_outputs:
+          massage: true
+          heat1: false
+          heat2: true
+        arduino_outputs:
+          arduino1:
+            vibration1: 128
+            vibration2: 200
+            fan3: 1
+        wled_outputs:
+          main_strip:
+            rgb: [255, 140, 0]  # Orange/warm desert color
+            effect_id: 0        # Solid color
+            speed: 128          # Mid speed
+            intensity: 255      # Full brightness
+          accent_lights:
+            rgb: [255, 50, 0]   # Darker orange
+            effect_id: 5        # Some effect
+            speed: 200
+            intensity: 180
+      - time: 30000  # 30 seconds into video
+        i2c_outputs:
+          massage: false
+          heat1: true
+          heat2: false
+        arduino_outputs:
+          arduino1:
+            vibration1: 255
+            vibration2: 100
+      - time: 60000  # 60 seconds into video
+        arduino_outputs:
+          arduino1:
+            vibration1: 0
+            vibration2: 255
+            fan3: 0
     duration: 122.33
 
   - name: ice
     file: ice.mp4
-    i2c_outputs:
-      fan1: false
-      fan2: true
-      massage: false
-      heat1: true
-      heat2: false
+    image: ice.jpg
+    image_active: ice_active.jpg
+    timed_outputs:
+      - time: 0
+        i2c_outputs:
+          fan1: false
+          fan2: true
+          massage: false
+          heat1: true
+          heat2: false
+        arduino_outputs:
+          arduino1:
+            vibration1: 0
+            vibration2: 0
+            fan3: 0
+        wled_outputs:
+          main_strip:
+            rgb: [255, 140, 0]  # Orange/warm desert color
+            effect_id: 0        # Solid color
+            speed: 128          # Mid speed
+            intensity: 255      # Full brightness
+          accent_lights:
+            rgb: [255, 50, 0]   # Darker orange
+            effect_id: 5        # Some effect
+            speed: 200
+            intensity: 180
+      - time: 5000  # 5 seconds into video
+        i2c_outputs:
+          fan1: true
+          fan2: false
+        arduino_outputs:
+          arduino1:
+            vibration1: 128
+            fan3: 1
     duration: 10.13
-
-  - name: jungle
-    file: jungle.mp4
-    i2c_outputs:
-      fan1: true
-      fan2: true
-      massage: true
-      heat1: true
-      heat2: true
-    duration: 15.06

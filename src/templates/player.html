@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Experience Chair Player</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        .scene-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .scene-button {
+            position: relative;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .scene-button:hover {
+            transform: scale(1.05);
+        }
+        .scene-button img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+        .play-all {
+            display: block;
+            width: 100%;
+            max-width: 200px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #444;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .play-all:hover {
+            background: #666;
+        }
+    </style>
+</head>
+<body>
+    <button class="play-all" onclick="playAll()">Play All Scenes</button>
+
+    <div class="scene-grid">
+    {% for scene in config_content.scenes %}
+        <button class="scene-button" id="scene-{{ loop.index0 }}" onclick="toggleScene({{ loop.index0 }})">
+            <img src="{{ url_for('static', filename='images/' + scene.image) }}"
+                 alt="{{ scene.name }}"
+                 data-image="{{ url_for('static', filename='images/' + scene.image) }}"
+                 data-image-active="{{ url_for('static', filename='images/' + scene.image_active) }}">
+        </button>
+    {% endfor %}
+    </div>
+
+    <script>
+        let currentlyPlaying = null;
+        let isPlayingAll = false;
+
+        function toggleScene(sceneIndex) {
+            if (currentlyPlaying === sceneIndex) {
+                // Stop the current scene
+                fetch("{{ url_for('stop') }}");
+                updateSceneImage(sceneIndex, false);
+                currentlyPlaying = null;
+                isPlayingAll = false;
+            } else {
+                // Play the selected scene
+                fetch("{{ url_for('play_single', scene_index=0) }}".replace('0', sceneIndex));
+                if (currentlyPlaying !== null) {
+                    updateSceneImage(currentlyPlaying, false);
+                }
+                updateSceneImage(sceneIndex, true);
+                currentlyPlaying = sceneIndex;
+                isPlayingAll = false;
+            }
+        }
+
+        function playAll() {
+            fetch("{{ url_for('play') }}");
+            if (currentlyPlaying !== null) {
+                updateSceneImage(currentlyPlaying, false);
+            }
+            currentlyPlaying = 0;
+            isPlayingAll = true;
+            updateSceneImage(0, true);
+        }
+
+        function updateSceneImage(sceneIndex, isPlaying) {
+            const button = document.getElementById(`scene-${sceneIndex}`);
+            const img = button.querySelector('img');
+            img.src = isPlaying ? img.dataset.imageActive : img.dataset.image;
+        }
+
+        // Polling for current scene updates
+        setInterval(async () => {
+            const response = await fetch("{{ url_for('get_current_scene') }}");
+            const data = await response.json();
+
+            if (data.scene === "Idle") {
+                if (currentlyPlaying !== null) {
+                    updateSceneImage(currentlyPlaying, false);
+                    currentlyPlaying = null;
+                    isPlayingAll = false;
+                }
+            } else if (data.scene_index !== null) {
+                if (currentlyPlaying !== data.scene_index) {
+                    if (currentlyPlaying !== null) {
+                        updateSceneImage(currentlyPlaying, false);
+                    }
+                    updateSceneImage(data.scene_index, true);
+                    currentlyPlaying = data.scene_index;
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
