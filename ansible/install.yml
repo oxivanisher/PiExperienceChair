@@ -19,7 +19,7 @@
         path: "/boot/firmware/config.txt"
         line: "dtparam=i2c_arm=on"
         state: present
-      when: ansible_distribution == "Raspbian"
+      when: ansible_architecture == "aarch64"
       notify: Reboot_pi
       become: true
       become_user: root
