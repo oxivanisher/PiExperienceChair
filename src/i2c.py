@@ -10,7 +10,7 @@ from adafruit_mcp230xx.mcp23017 import MCP23017
 i2c = busio.I2C(board.SCL, board.SDA)
 
 
-class MCP23017Controller(PiExpChair):
+class I2cController(PiExpChair):
     def __init__(self):
         super().__init__()
 
@@ -95,10 +95,11 @@ class MCP23017Controller(PiExpChair):
 
     def play_scene(self, scene_index):
         # Reset output magic
-        self.check_for_output_change(True)
+        self.check_for_output_change(start=True)
 
     def set_idle_outputs(self):
         self.logger.debug("Load idle settings")
+        self.check_for_output_change(disable=True)
         self.set_outputs(self.config['idle'])
 
     def handle_output_change(self):
@@ -203,5 +204,5 @@ class MCP23017Controller(PiExpChair):
 
 # Example usage
 if __name__ == "__main__":
-    mcp_controller = MCP23017Controller()
+    mcp_controller = I2cController()
     mcp_controller.run()

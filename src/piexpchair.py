@@ -140,6 +140,7 @@ class PiExpChair:
         self.current_scene_start_time = 0.0
         self.current_output_index = -1
         self.current_scene_index = -1
+        self.output_check_disabled = False
 
         if self.config:
             self.terminate = False
@@ -184,9 +185,6 @@ class PiExpChair:
                 elif msg.payload.decode() == "play":
                     self.logger.info("Received play command")
                     self.play()
-                elif msg.payload.decode() == "play_single":
-                    self.logger.info("Received play_single command")
-                    self.play_single()
                 elif msg.payload.decode() == "stop":
                     self.logger.info("Received stop command")
                     self.stop()
@@ -199,6 +197,10 @@ class PiExpChair:
                 elif msg.payload.decode() == "shutdown":
                     self.logger.info("Received shutdown command")
                     self.shutdown()
+                elif "play_single_" in msg.payload.decode(): # yes ... I puked a little in my mouth when i wrote this
+                    scene_index = int(msg.payload.decode().replace("play_single_", ""))
+                    self.logger.info("Received play_single command for index {scene_index}")
+                    self.play_single(scene_index)
         except Exception as e:
             self.logger.warning("Error processing message in on_message:", e)
 
@@ -218,9 +220,9 @@ class PiExpChair:
         self.logger.info("Sending play command")
         self._send_control_command("play")
 
-    def send_play_single(self):
+    def send_play_single(self, scene_index):
         self.logger.info("Sending play single command")
-        self._send_control_command("play_single")
+        self._send_control_command(f"play_single_{int(scene_index)}")
 
     def send_stop(self):
         self.logger.info("Sending stop command")
@@ -262,13 +264,22 @@ class PiExpChair:
         self.logger.debug("Method shutdown not implemented")
 
     # Output helper methods
-    def check_for_output_change(self, start = False):
+    def check_for_output_change(self, start = False, disable = False):
         """
         Returns the index of outputs to be played
         At the start of a scene, call it with True
         :return:
         int: output index
         """
+
+        if disable:
+            self.output_check_disabled = True
+            return -1
+        if start:
+            self.output_check_disabled = False
+
+        if self.output_check_disabled:
+            return -1
 
         current_scene = self.config['scenes'][self.current_scene_index]
         current_time = time.time()

@@ -95,7 +95,7 @@ def play():
 
 @app.route('/play_single/<int:scene_index>')
 def play_single(scene_index):
-    pxc.mqtt_client.publish("%s/videoplayer/play_single" % pxc.mqtt_config['base_topic'], scene_index)
+    pxc.send_play_single(scene_index)
     return redirect(url_for("index"))
 
 
