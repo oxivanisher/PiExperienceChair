@@ -125,6 +125,7 @@ class WLEDController(PiExpChair):
             )
 
     def module_run(self):
+        super().module_run()
         """
         Main module run loop - can be used for continuous state monitoring
         """

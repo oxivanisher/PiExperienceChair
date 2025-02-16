@@ -23,14 +23,45 @@ logging.basicConfig(
 broker_schema = Schema({"host": str, "port": int, "base_topic": str})
 
 config_schema = Schema({
-    "videoplayer": {"media_path": str, "rc_socket": str, "idle_animation": str},
-    "i2c": {"input": {"play": {"address": hex, "pin": int},
-                      "stop": {"address": hex, "pin": int},
-                      "next": {"address": hex, "pin": int},
-                      "prev": {"address": hex, "pin": int},
-                      "shutdown": {"address": hex, "pin": int}},
-            "output": {str: {"address": hex, "pin": int}}},
-    "scenes": [{"name": str, "file": str, "i2c_outputs": {str: bool}, "duration": float}]
+    "videoplayer": {"media_path": str, "rc_socket": str},
+    "i2c": {
+        "input": {
+            "play": {"address": hex, "pin": int},
+            "stop": {"address": hex, "pin": int},
+            "next": {"address": hex, "pin": int},
+            "prev": {"address": hex, "pin": int},
+            "shutdown": {"address": hex, "pin": int}
+        },
+        "output": {str: {"address": hex, "pin": int}},
+        "arduino_devices": {str: {"address": hex, "pin": int}}
+    },
+    "wled_styles": {
+        str: {
+            "rgb": [And(int, lambda x: 0 <= x <= 255)],
+            "effect_id": int,
+            "speed": int,
+            "intensity": int
+        }
+    },
+    "idle": {
+        "file": str,
+        "i2c_outputs": {str: bool},
+        "arduino_outputs": {str: int},
+        "wled_outputs": {str: str}
+    },
+    "scenes": [{
+        "name": str,
+        "file": str,
+        "image": str,
+        "image_active": str,
+        "duration": float,
+        "timed_outputs": [{
+            "start_time": float,
+            Optional("i2c_outputs"): {str: bool},
+            Optional("arduino_outputs"): {str: int},
+            Optional("wled_outputs"): {str: str}
+        }]
+    }]
 })
 
 
@@ -106,6 +137,10 @@ class PiExpChair:
         self.last_messages = {}
         self.subscribe_to_everything = subscribe_to_everything
 
+        self.current_scene_start_time = 0.0
+        self.current_output_index = -1
+        self.current_scene_index = -1
+
         if self.config:
             self.terminate = False
         else:
@@ -149,6 +184,9 @@ class PiExpChair:
                 elif msg.payload.decode() == "play":
                     self.logger.info("Received play command")
                     self.play()
+                elif msg.payload.decode() == "play_single":
+                    self.logger.info("Received play_single command")
+                    self.play_single()
                 elif msg.payload.decode() == "stop":
                     self.logger.info("Received stop command")
                     self.stop()
@@ -180,6 +218,10 @@ class PiExpChair:
         self.logger.info("Sending play command")
         self._send_control_command("play")
 
+    def send_play_single(self):
+        self.logger.info("Sending play single command")
+        self._send_control_command("play_single")
+
     def send_stop(self):
         self.logger.info("Sending stop command")
         self._send_control_command("stop")
@@ -204,6 +246,9 @@ class PiExpChair:
     def play(self):
         self.logger.debug("Method play not implemented")
 
+    def play_single(self):
+        self.logger.debug("Method play_single not implemented")
+
     def stop(self):
         self.logger.debug("Method stop not implemented")
 
@@ -215,6 +260,37 @@ class PiExpChair:
 
     def shutdown(self):
         self.logger.debug("Method shutdown not implemented")
+
+    # Output helper methods
+    def check_for_output_change(self, start = False):
+        """
+        Returns the index of outputs to be played
+        At the start of a scene, call it with True
+        :return:
+        int: output index
+        """
+
+        current_scene = self.config['scenes'][self.current_scene_index]
+        current_time = time.time()
+
+        # Start a new scene
+        if start:
+            self.current_output_index = -1
+            self.current_scene_start_time = current_time
+
+        loop_output_index = -1
+        current_time_delta = current_time - self.current_scene_start_time
+        for timed_output in current_scene['timed_outputs']:
+            if current_time_delta <= timed_output['start_time']:
+                break
+            loop_output_index += 1
+
+        if self.current_output_index != loop_output_index:
+            self.logger.debug(f"Setting output index to {loop_output_index} ({current_time_delta})")
+            self.current_output_index = loop_output_index
+            return loop_output_index
+        else:
+            return False
 
     # Control methods
     def module_run(self):

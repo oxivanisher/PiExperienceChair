@@ -37,3 +37,16 @@ Watchdog service events can be triggered by creating files in `tmp/`. This is ma
 * `vlc_debug`: Let VLC log to `/tmp/vlc.log` (a force_restart is required)
 * `reboot_computer`: Reboot the computer
 * `shutdown_computer`: Shuts the computer down
+
+
+## tmp claude prompt save
+#todo
+
+I need to add support for external displays that show synchronized videos using a custom TCP protocol. I have a PDF with the protocol specifications that I'd like to implement in a similar style to the existing components.
+Can you help me create a display controller that:
+1. Follows the same pattern as other controllers
+2. Integrates with the timed output system
+3. Handles TCP communication according to the protocol
+4. Synchronizes video playback with the main system
+
+the protocol is specified in tmp/TU Series Control Protocol V3.0.0 minimized.pdf

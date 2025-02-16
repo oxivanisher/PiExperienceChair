@@ -2,94 +2,177 @@
 videoplayer:
   media_path: /home/{{ target_user }}/media/
   rc_socket: /tmp/vlc_rc.sock
-  idle_animation: idle.mp4
 
 i2c:
-  # ... (existing i2c config remains the same)
+  input:
+    play:
+      address: 0x27
+      pin: 0
+    stop:
+      address: 0x27
+      pin: 1
+    next:
+      address: 0x27
+      pin: 2
+    prev:
+      address: 0x27
+      pin: 3
+    shutdown:
+      address: 0x27
+      pin: 4
+
+  output:
+    fan1:
+      address: 0x23
+      pin: 0
+    fan2:
+      address: 0x23
+      pin: 1
+    massage:
+      address: 0x23
+      pin: 2
+    heat1:
+      address: 0x23
+      pin: 3
+    heat2:
+      address: 0x23
+      pin: 4
+
+  arduino_devices:
+    arduino1_output1:
+      address: 0x20
+      pin: 0
+    arduino1_output2:
+      address: 0x20
+      pin: 1
+    arduino2_output1:
+      address: 0x21
+      pin: 0
+    arduino2_output2:
+      address: 0x21
+      pin: 1
+
+wled_styles:
+  orange_warm:
+    rgb: [255, 140, 0]
+    effect_id: 0
+    speed: 128
+    intensity: 255
+  orange_dark:
+    rgb: [255, 50, 0]
+    effect_id: 5
+    speed: 200
+    intensity: 180
+
+idle:
+  file: idle.mp4
+  i2c_outputs:
+    massage: false
+    heat1: false
+    heat2: false
+  arduino_outputs:
+    arduino1_output1: 0
+    arduino1_output2: 0
+  wled_outputs:
+    strip1: orange_warm
+    strip2: orange_dark
 
 scenes:
   - name: desert
     file: desert.mp4
-    image: desert.jpg
+    image: desert_inactive.jpg
     image_active: desert_active.jpg
-    # Static outputs (backward compatibility)
-    i2c_outputs:
-      fan1: true
-      fan2: false
-    # New timed outputs
+    duration: 30.321
     timed_outputs:
-      - time: 0  # Start of video
+      - start_time: 0.0
         i2c_outputs:
           massage: true
           heat1: false
           heat2: true
         arduino_outputs:
-          arduino1:
-            vibration1: 128
-            vibration2: 200
-            fan3: 1
+          arduino1_output1: 129
+          arduino1_output2: 255
         wled_outputs:
-          main_strip:
-            rgb: [255, 140, 0]  # Orange/warm desert color
-            effect_id: 0        # Solid color
-            speed: 128          # Mid speed
-            intensity: 255      # Full brightness
-          accent_lights:
-            rgb: [255, 50, 0]   # Darker orange
-            effect_id: 5        # Some effect
-            speed: 200
-            intensity: 180
-      - time: 30000  # 30 seconds into video
+          strip1: orange_warm
+          strip2: orange_dark
+      - start_time: 10.2
         i2c_outputs:
-          massage: false
+          massage: true
           heat1: true
           heat2: false
         arduino_outputs:
-          arduino1:
-            vibration1: 255
-            vibration2: 100
-      - time: 60000  # 60 seconds into video
+          arduino1_output1: 90
+          arduino1_output2: 100
+        wled_outputs:
+          strip1: orange_warm
+          strip2: orange_dark
+      - start_time: 20.3
         arduino_outputs:
-          arduino1:
-            vibration1: 0
-            vibration2: 255
-            fan3: 0
-    duration: 122.33
+          arduino1_output1: 10
+          arduino1_output2: 60
 
   - name: ice
     file: ice.mp4
-    image: ice.jpg
+    image: ice_inactive.jpg
     image_active: ice_active.jpg
+    duration: 10.13
     timed_outputs:
-      - time: 0
+      - start_time: 0.0
         i2c_outputs:
-          fan1: false
-          fan2: true
-          massage: false
+          massage: true
+          heat1: false
+          heat2: true
+        arduino_outputs:
+          arduino1_output1: 129
+          arduino1_output2: 255
+        wled_outputs:
+          strip1: orange_warm
+          strip2: orange_dark
+      - start_time: 3.2
+        i2c_outputs:
+          massage: true
           heat1: true
           heat2: false
         arduino_outputs:
-          arduino1:
-            vibration1: 0
-            vibration2: 0
-            fan3: 0
+          arduino1_output1: 90
+          arduino1_output2: 100
         wled_outputs:
-          main_strip:
-            rgb: [255, 140, 0]  # Orange/warm desert color
-            effect_id: 0        # Solid color
-            speed: 128          # Mid speed
-            intensity: 255      # Full brightness
-          accent_lights:
-            rgb: [255, 50, 0]   # Darker orange
-            effect_id: 5        # Some effect
-            speed: 200
-            intensity: 180
-      - time: 5000  # 5 seconds into video
-        i2c_outputs:
-          fan1: true
-          fan2: false
+          strip1: orange_warm
+          strip2: orange_dark
+      - start_time: 6.2
         arduino_outputs:
-          arduino1:
-            vibration1: 128
-            fan3: 1
-    duration: 10.13
+          arduino1_output1: 10
+          arduino1_output2: 60
+
+  - name: jungle
+    file: jungle.mp4
+    image: jungle_inactive.jpg
+    image_active: jungle_active.jpg
+    duration: 15.06
+    timed_outputs:
+      - start_time: 0.0
+        i2c_outputs:
+          massage: true
+          heat1: false
+          heat2: true
+        arduino_outputs:
+          arduino1_output1: 129
+          arduino1_output2: 255
+        wled_outputs:
+          strip1: orange_warm
+          strip2: orange_dark
+      - start_time: 3.2
+        i2c_outputs:
+          massage: true
+          heat1: true
+          heat2: false
+        arduino_outputs:
+          arduino1_output1: 90
+          arduino1_output2: 100
+        wled_outputs:
+          strip1: orange_warm
+          strip2: orange_dark
+      - start_time: 10.7
+        arduino_outputs:
+          arduino1_output1: 10
+          arduino1_output2: 60
