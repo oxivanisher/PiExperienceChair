@@ -246,7 +246,7 @@ class PiExpChair:
     def play(self):
         self.logger.debug("Method play not implemented")
 
-    def play_single(self):
+    def play_single(self, scene_index):
         self.logger.debug("Method play_single not implemented")
 
     def stop(self):
@@ -290,7 +290,7 @@ class PiExpChair:
             self.current_output_index = loop_output_index
             return loop_output_index
         else:
-            return False
+            return -1
 
     # Control methods
     def module_run(self):
