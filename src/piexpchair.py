@@ -24,8 +24,8 @@ broker_schema = Schema({
     "host": str,
     "port": int,
     "base_topic": str,
-    Optional("user"): {str: str},
-    Optional("password"): {str: str}
+    Optional("user"): str,
+    Optional("password"): str
 })
 
 config_schema = Schema({
@@ -137,6 +137,9 @@ class PiExpChair:
         self.mqtt_client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
                                        client_id=self.mqtt_client_id,
                                        protocol=MQTTProtocolVersion.MQTTv5)
+
+        if self.mqtt_config and 'user' in self.mqtt_config.keys() and 'password' in self.mqtt_config.keys():
+            self.mqtt_client.username_pw_set(self.mqtt_config['user'], self.mqtt_config['password'])
 
         if log_level == logging.DEBUG:
             self.logger.debug(f"Enable MQTT logging since DEBUG is enabled")
