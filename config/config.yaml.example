@@ -52,17 +52,22 @@ i2c:
       address: 0x21
       pin: 1
 
-wled_styles:
-  orange_warm:
-    rgb: [255, 140, 0]
-    effect_id: 0
-    speed: 128
-    intensity: 255
-  orange_dark:
-    rgb: [255, 50, 0]
-    effect_id: 5
-    speed: 200
-    intensity: 180
+wled:
+  colors:
+    orange_warm: [[255, 140, 0], [0, 0, 0], [0, 0, 0]]
+    orange_dark: [[255, 50, 0], [0, 0, 0], [0, 0, 0]]
+
+  macros:
+    orange_warm:
+      color: orange_warm
+      effect_id: 0
+      speed: 128
+      intensity: 255
+    orange_dark:
+      color: orange_dark
+      effect_id: 5
+      speed: 200
+      intensity: 180
 
 idle:
   file: idle.mp4
@@ -74,8 +79,8 @@ idle:
     arduino1_output1: 0
     arduino1_output2: 0
   wled_outputs:
-    strip1: orange_warm
-    strip2: orange_dark
+    1: orange_warm
+    2: orange_dark
 
 scenes:
   - name: desert
@@ -93,8 +98,8 @@ scenes:
           arduino1_output1: 129
           arduino1_output2: 255
         wled_outputs:
-          strip1: orange_warm
-          strip2: orange_dark
+          1: orange_warm
+          2: orange_dark
       - start_time: 10.2
         i2c_outputs:
           massage: true
@@ -104,8 +109,8 @@ scenes:
           arduino1_output1: 90
           arduino1_output2: 100
         wled_outputs:
-          strip1: orange_warm
-          strip2: orange_dark
+          1: orange_warm
+          2: orange_dark
       - start_time: 20.3
         arduino_outputs:
           arduino1_output1: 10
@@ -126,8 +131,8 @@ scenes:
           arduino1_output1: 129
           arduino1_output2: 255
         wled_outputs:
-          strip1: orange_warm
-          strip2: orange_dark
+          1: orange_warm
+          2: orange_dark
       - start_time: 3.2
         i2c_outputs:
           massage: true
@@ -137,8 +142,8 @@ scenes:
           arduino1_output1: 90
           arduino1_output2: 100
         wled_outputs:
-          strip1: orange_warm
-          strip2: orange_dark
+          1: orange_warm
+          2: orange_dark
       - start_time: 6.2
         arduino_outputs:
           arduino1_output1: 10
@@ -159,8 +164,8 @@ scenes:
           arduino1_output1: 129
           arduino1_output2: 255
         wled_outputs:
-          strip1: orange_warm
-          strip2: orange_dark
+          1: orange_warm
+          2: orange_dark
       - start_time: 3.2
         i2c_outputs:
           massage: true
@@ -170,8 +175,8 @@ scenes:
           arduino1_output1: 90
           arduino1_output2: 100
         wled_outputs:
-          strip1: orange_warm
-          strip2: orange_dark
+          1: orange_warm
+          2: orange_dark
       - start_time: 10.7
         arduino_outputs:
           arduino1_output1: 10

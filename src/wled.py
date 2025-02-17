@@ -10,6 +10,8 @@ class WLEDController(PiExpChair):
         if self.terminate:
             return
 
+        self.mqtt_path_identifier = "wled"
+
         # Initialize WLED devices from config
         self.wled_devices = {}
         if 'wled' in self.config and 'devices' in self.config['wled']:
@@ -92,44 +94,32 @@ class WLEDController(PiExpChair):
 
         try:
             if msg.topic == "%s/videoplayer/scene" % self.mqtt_config['base_topic']:
+
                 if msg.payload.decode() == "":
                     self.logger.info("Received play no scene command")
                 else:
-                    scene_index = int(msg.payload.decode())
-                    if 0 <= scene_index < len(self.config['scenes']):
-                        self.logger.info(f"Received scene index {scene_index} to play")
-                        self.apply_scene_outputs(scene_index, 0)  # Apply initial outputs
+                    self.current_scene_index = int(msg.payload.decode())
+                    if 0 <= self.current_scene_index < len(self.config['scenes']):
+                        self.logger.info(f"Received scene index {self.current_scene_index} to play")
+                        self.play_scene(True)
+                        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
                     else:
                         self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
 
             elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
                 self.logger.info("Received idle scene command")
-                self.disable_outputs()
+                self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
+                self.set_idle_outputs()
 
         except Exception as e:
-            self.logger.warning(f"Error processing message in on_message: {e}", exc_info=True)
+            self.logger.warning("Error processing message in on_message for videoplayer:", e)
 
-    def disable_outputs(self):
-        """
-        Disable all WLED outputs (set to off or idle state)
-        """
-        self.logger.debug("Disabling all WLED outputs")
-        for device_name in self.wled_devices:
-            # You can customize this default/idle state
-            self.set_wled_state(
-                device_name,
-                rgb=[0, 0, 0],  # Off
-                effect_id=0,  # Solid color
-                speed=128,  # Mid speed
-                intensity=0  # No intensity
-            )
+    def play_scene(self, scene_index):
+        # Reset output magic
+        self.check_for_output_change(start=True)
 
     def module_run(self):
-        super().module_run()
-        """
-        Main module run loop - can be used for continuous state monitoring
-        """
-        pass  # Add any continuous monitoring if needed
+        self.handle_output_change()
 
 
 # Example usage

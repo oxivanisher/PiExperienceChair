@@ -35,19 +35,24 @@ config_schema = Schema({
         "output": {str: {"address": hex, "pin": int}},
         "arduino_devices": {str: {"address": hex, "pin": int}}
     },
-    "wled_styles": {
-        str: {
-            "rgb": [And(int, lambda x: 0 <= x <= 255)],
-            "effect_id": int,
-            "speed": int,
-            "intensity": int
+    "wled": {
+        "colors": {
+            str: [[And(int, lambda x: 0 <= x <= 255)], [And(int, lambda x: 0 <= x <= 255)], [And(int, lambda x: 0 <= x <= 255)]]
+        },
+        "macros": {
+            str: {
+                "color": str,
+                "effect_id": int,
+                "speed": int,
+                "intensity": int
+            }
         }
     },
     "idle": {
         "file": str,
         "i2c_outputs": {str: bool},
         "arduino_outputs": {str: int},
-        "wled_outputs": {str: str}
+        "wled_outputs": {int: str}
     },
     "scenes": [{
         "name": str,
@@ -59,7 +64,7 @@ config_schema = Schema({
             "start_time": float,
             Optional("i2c_outputs"): {str: bool},
             Optional("arduino_outputs"): {str: int},
-            Optional("wled_outputs"): {str: str}
+            Optional("wled_outputs"): {int: str}
         }]
     }]
 })
@@ -141,6 +146,8 @@ class PiExpChair:
         self.current_output_index = -1
         self.current_scene_index = -1
         self.output_check_disabled = False
+
+        self.mqtt_path_identifier = "__super__"
 
         if self.config:
             self.terminate = False
@@ -264,6 +271,21 @@ class PiExpChair:
         self.logger.debug("Method shutdown not implemented")
 
     # Output helper methods
+    def apply_scene_outputs(self, config):
+        self.logger.debug("Method apply_scene_outputs not implemented")
+
+    def handle_output_change(self):
+        new_output_index = self.check_for_output_change()
+        if new_output_index >= 0:
+            self.logger.debug(f"New output index {new_output_index}")
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/profile", new_output_index)
+            self.apply_scene_outputs(self.config['scenes'][self.current_scene_index]['timed_outputs'][new_output_index])
+
+    def set_idle_outputs(self):
+        self.logger.debug("Load idle settings")
+        self.check_for_output_change(disable=True)
+        self.apply_scene_outputs(self.config['idle'])
+
     def check_for_output_change(self, start = False, disable = False):
         """
         Returns the index of outputs to be played

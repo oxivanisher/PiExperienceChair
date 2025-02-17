@@ -17,6 +17,8 @@ class I2cController(PiExpChair):
         if self.terminate:
             return
 
+        self.mqtt_path_identifier = "i2c"
+
         # find all i2c addresses (MCP23017)
         i2c_addresses = []
         for key in self.config['i2c']['input']:
@@ -64,9 +66,6 @@ class I2cController(PiExpChair):
     def on_connect(self, client, userdata, flags, reason_code, properties):
         super().on_connect(client, userdata, flags, reason_code, properties)
         self.mqtt_subscribe(client, "videoplayer/#")
-        # Subscribe to direct output control topics
-        self.mqtt_subscribe(client, "i2c/output/#")
-        self.mqtt_subscribe(client, "i2c/arduino/#")
 
     def on_message(self, client, userdata, msg):
         super().on_message(client, userdata, msg)
@@ -81,13 +80,13 @@ class I2cController(PiExpChair):
                     if 0 <= self.current_scene_index < len(self.config['scenes']):
                         self.logger.info(f"Received scene index {self.current_scene_index} to play")
                         self.play_scene(True)
-                        self.mqtt_client.publish("%s/i2c/scene" % self.mqtt_config['base_topic'], self.current_scene_index)
+                        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
                     else:
                         self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
 
             elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
                 self.logger.info("Received idle scene command")
-                self.mqtt_client.publish("%s/i2c/idle" % self.mqtt_config['base_topic'], True)
+                self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
                 self.set_idle_outputs()
 
         except Exception as e:
@@ -97,19 +96,7 @@ class I2cController(PiExpChair):
         # Reset output magic
         self.check_for_output_change(start=True)
 
-    def set_idle_outputs(self):
-        self.logger.debug("Load idle settings")
-        self.check_for_output_change(disable=True)
-        self.set_outputs(self.config['idle'])
-
-    def handle_output_change(self):
-        new_output_index = self.check_for_output_change()
-        if new_output_index >= 0:
-            self.logger.debug(f"New output index {new_output_index}")
-            self.mqtt_client.publish("%s/i2c/profile" % self.mqtt_config['base_topic'], new_output_index)
-            self.set_outputs(self.config['scenes'][self.current_scene_index]['timed_outputs'][new_output_index])
-
-    def set_outputs(self, current_outputs):
+    def apply_scene_outputs(self, current_outputs):
         if 'i2c_outputs' in current_outputs:
             for output_name, state in current_outputs['i2c_outputs'].items():
                 self.set_i2c_output(output_name, state)
