@@ -20,7 +20,13 @@ logging.basicConfig(
     level=log_level
 )
 
-broker_schema = Schema({"host": str, "port": int, "base_topic": str})
+broker_schema = Schema({
+    "host": str,
+    "port": int,
+    "base_topic": str,
+    Optional("user"): {str: str},
+    Optional("password"): {str: str}
+})
 
 config_schema = Schema({
     "videoplayer": {"media_path": str, "rc_socket": str},
