@@ -36,11 +36,17 @@ config_schema = Schema({
         "arduino_devices": {str: {"address": hex, "pin": int}}
     },
     "wled": {
+        "settings": {
+          "transition": int
+        },
+        "devices": [str],
         "colors": {
             str: [[And(int, lambda x: 0 <= x <= 255)], [And(int, lambda x: 0 <= x <= 255)], [And(int, lambda x: 0 <= x <= 255)]]
         },
         "macros": {
             str: {
+                "brightness": int,
+                "strip_on": bool,
                 "color": str,
                 "effect_id": int,
                 "speed": int,
@@ -64,7 +70,7 @@ config_schema = Schema({
             "start_time": float,
             Optional("i2c_outputs"): {str: bool},
             Optional("arduino_outputs"): {str: int},
-            Optional("wled_outputs"): {int: str}
+            Optional("wled_outputs"): {And(int, lambda x: 0 <= x <= 32): str}
         }]
     }]
 })

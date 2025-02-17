@@ -106,10 +106,11 @@
         enabled: true
         daemon_reload: true
       loop: "{{ services }}"
+      ignore_errors: "{{ ansible_check_mode }}"
 
     - name: Deploy example broker config if none exists
       ansible.builtin.copy:
-        src: "broker.yaml"
+        src: "../config/broker.yaml.example"
         dest: "{{ target_directory }}/config/broker.yaml"
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
@@ -119,7 +120,7 @@
 
     - name: Deploy example PiExperienceChair config if none exists
       ansible.builtin.copy:
-        src: "config.yaml"
+        src: "../config/config.yaml.example"
         dest: "{{ target_directory }}/config/config.yaml"
         owner: "{{ target_user }}"
         group: "{{ target_user }}"

@@ -11,79 +11,41 @@ class WLEDController(PiExpChair):
             return
 
         self.mqtt_path_identifier = "wled"
+        self.wled_transistion = 20
+        if 'wled' in self.config and 'settings' in self.config['wled']:
+            if 'transition' in self.config['wled']['settings'].keys():
+                self.wled_transistion = self.config['wled']['settings']['transition']
 
         # Initialize WLED devices from config
-        self.wled_devices = {}
+        self.wled_devices = []
         if 'wled' in self.config and 'devices' in self.config['wled']:
-            for device_name, device_config in self.config['wled']['devices'].items():
-                self.wled_devices[device_name] = device_config
-                self.logger.debug(
-                    f"Registered WLED device {device_name} with topic: {device_config['topic']}")
+            self.wled_devices = self.config['wled']['devices']
+            self.logger.debug(f"Registered the following WLED device: {', '.join(self.wled_devices)}")
 
-    def set_wled_state(self, device_name, rgb=None, effect_id=None, speed=None, intensity=None):
-        """
-        Set WLED device state
-        :param device_name: Name of the WLED device from config
-        :param rgb: List of [r,g,b] values (0-255)
-        :param effect_id: Effect ID number
-        :param speed: Effect speed (0-255)
-        :param intensity: Effect intensity (0-255)
-        """
-        if device_name not in self.wled_devices:
-            self.logger.warning(f"Unknown WLED device: {device_name}")
-            return
+        self.wled_macros = {}
+        if 'wled' in self.config and 'macros' in self.config['wled']:
+            self.wled_macros = self.config['wled']['macros']
 
-        device = self.wled_devices[device_name]
-        state = {}
+        self.wled_colors = {}
+        if 'wled' in self.config and 'colors' in self.config['wled']:
+            self.wled_colors = self.config['wled']['colors']
 
-        # Only include parameters that are provided
-        if rgb is not None:
-            state['rgb'] = rgb
-        if effect_id is not None:
-            state['effect_id'] = effect_id
-        if speed is not None:
-            state['speed'] = speed
-        if intensity is not None:
-            state['intensity'] = intensity
+    def apply_scene_outputs(self, current_outputs):
+        if 'wled_outputs' in current_outputs:
+            for device in self.wled_devices:
+                device_output = {"on": True, "transition": self.wled_transistion, "seg": []}
+                for strip, macro_name in current_outputs['wled_outputs'].items():
+                    macro = self.wled_macros[macro_name]
+                    colors = self.wled_colors[macro['color']]
+                    strip_output = {"id": strip, "on": macro['strip_on'], "bri": macro['brightness'],
+                                    "fx": macro['effect_id'], "sx": macro['speed'], "ix": macro['intensity'],
+                                    "tt": self.wled_transistion, "transition": self.wled_transistion,
+                                    "col": colors, "pal": 0}
+                    device_output['seg'].append(strip_output)
+                    self.logger.debug(f"WLED should to set strip {strip} to macro {macro}")
 
-        # Send state update via MQTT
-        if state:
-            self.mqtt_client.publish(
-                f"{device['topic']}/api",
-                json.dumps(state)
-            )
-            self.logger.debug(f"Sent state update to WLED device {device_name}: {state}")
-
-    def apply_scene_outputs(self, scene_index, current_time_ms):
-        """
-        Apply WLED outputs for the current scene at the specified time
-        :param scene_index: Index of the current scene
-        :param current_time_ms: Current playback time in milliseconds
-        """
-        scene = self.config['scenes'][scene_index]
-
-        if 'timed_outputs' in scene:
-            # Track the latest state for each WLED device
-            latest_states = {}
-
-            # Find all outputs that should be applied at or before current_time_ms
-            for output_set in scene['timed_outputs']:
-                if output_set['time'] <= current_time_ms and 'wled_outputs' in output_set:
-                    for device_name, state in output_set['wled_outputs'].items():
-                        if device_name not in latest_states:
-                            latest_states[device_name] = {}
-                        # Update with the latest values, preserving any previously set values
-                        latest_states[device_name].update(state)
-
-            # Apply the final states to each device
-            for device_name, state in latest_states.items():
-                self.set_wled_state(
-                    device_name,
-                    rgb=state.get('rgb'),
-                    effect_id=state.get('effect_id'),
-                    speed=state.get('speed'),
-                    intensity=state.get('intensity')
-                )
+                self.logger.debug(f"Sending WLED command over MQTT for {device}")
+                self.mqtt_client.publish(f"wled/{device}/api", json.dumps(device_output))
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         super().on_connect(client, userdata, flags, reason_code, properties)
