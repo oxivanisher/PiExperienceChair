@@ -7,6 +7,7 @@
     target_directory: "/home/{{ target_user }}/PiExperienceChair"
     services:
       - piexpchair_i2c.service
+      - piexpchair_wled.service
       - piexpchair_videoplayer.service
       - piexpchair_webui.service
       - piexpchair_watchdog.service
@@ -106,13 +107,24 @@
         daemon_reload: true
       loop: "{{ services }}"
 
-    - name: Deploy example broker config
+    - name: Deploy example broker config if none exists
       ansible.builtin.copy:
         src: "broker.yaml"
         dest: "{{ target_directory }}/config/broker.yaml"
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
         mode: "0640"
+        force: false
+      notify: Trigger_watchtog
+
+    - name: Deploy example PiExperienceChair config if none exists
+      ansible.builtin.copy:
+        src: "config.yaml"
+        dest: "{{ target_directory }}/config/config.yaml"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0640"
+        force: false
       notify: Trigger_watchtog
 
     - name: Force HDMI output
