@@ -32,14 +32,14 @@ config_schema = Schema({
     "videoplayer": {"media_path": str, "rc_socket": str},
     "i2c": {
         "input": {
-            "play": {"address": hex, "pin": int},
-            "stop": {"address": hex, "pin": int},
-            "next": {"address": hex, "pin": int},
-            "prev": {"address": hex, "pin": int},
-            "shutdown": {"address": hex, "pin": int}
+            Optional("play"): {"address": hex, "pin": int},
+            Optional("stop"): {"address": hex, "pin": int},
+            Optional("next"): {"address": hex, "pin": int},
+            Optional("prev"): {"address": hex, "pin": int},
+            Optional("shutdown"): {"address": hex, "pin": int}
         },
-        "output": {str: {"address": hex, "pin": int}},
-        "arduino_devices": {str: {"address": hex, "pin": int}}
+        "output": {Optional(str): {"address": hex, "pin": int}},
+        "arduino_devices": {Optional(str): {"address": hex, "pin": int}}
     },
     "wled": {
         "settings": {
@@ -62,9 +62,9 @@ config_schema = Schema({
     },
     "idle": {
         "file": str,
-        "i2c_outputs": {str: bool},
-        "arduino_outputs": {str: int},
-        "wled_outputs": {int: str}
+        "i2c_outputs": {Optional(str): bool},
+        "arduino_outputs": {Optional(str): int},
+        "wled_outputs": {Optional(int): str}
     },
     "scenes": [{
         "name": str,

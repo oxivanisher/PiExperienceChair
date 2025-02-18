@@ -120,7 +120,7 @@ def prev():
 @app.route('/quit')
 def quit():
     pxc.send_quit()
-    alert_message = "Please wait, all services (excluding WebUi and VLC) are being restarted."
+    alert_message = "Please wait, all services excluding the webinterface and the videoplayer are being restarted."
     return render_template('wait.html', alert_message=alert_message)
 
 
@@ -129,7 +129,7 @@ def force_restart():
     pxc.send_stop()
     with open("tmp/force_restart", "w") as text_file:
         text_file.write("Force restart requested %s" % time.time())
-    alert_message = "Please wait, all services (including WebUi and VLC) are being restarted."
+    alert_message = "Please wait, all services including the webinterface and the videoplayer are being restarted."
     return render_template('wait.html', alert_message=alert_message)
 
 

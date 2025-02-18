@@ -133,7 +133,7 @@ class I2cController(PiExpChair):
 
             self.logger.debug(f"Sent command to Arduino {address}: pin={output_pin}, value={value}")
         except Exception as e:
-            self.logger.error(f"Error sending command to Arduino {address}: {e}")
+            self.logger.error(f"Error sending command to Arduino at address {address}: {e}")
 
     def set_arduino_output(self, device_name, value):
         """
