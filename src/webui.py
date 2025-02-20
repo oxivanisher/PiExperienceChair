@@ -1,15 +1,11 @@
-from piexpchair import PiExpChair, check_config_for_webui, config_schema, read_config
-
-import time
-import datetime
 
 from functools import wraps
-from flask import Flask, request, render_template, redirect, url_for, jsonify, Response
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, request, render_template, redirect, url_for, jsonify, Response, session
 import os
 from piexpchair import PiExpChair, check_config_for_webui, config_schema, read_config
 import time
 import datetime
+import secrets
 
 import logging
 
@@ -19,27 +15,52 @@ if os.getenv('DEBUG', False):
 
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = secrets.token_hex(32)
 
 # Auth methods
 def check_auth(username, password):
     """Check if the username and password match the config."""
     try:
         config = read_config('config/config.yaml', pxc.logger, config_schema)
-        if 'webui' in config and 'admin' in config['webui'] and 'password' in config['webui']:
-            return username == config['webui']['admin'] and password == config['webui']['password']
+        if 'webui' in config and 'user' in config['webui'] and 'password' in config['webui']:
+            pxc.logger.debug(f"Config contains webui settings: user={config['webui']['user']}")  # Log the admin username (be careful with password logging)
+            return username == config['webui']['user'] and password == config['webui']['password']
     except Exception as e:
         pxc.logger.error(f"Error checking authentication: {str(e)}")
     return False
 
 
-def authenticate():
-    """Send a 401 response that enables basic auth."""
-    return Response(
-        'Could not verify your access level for that URL.\n'
-        'You have to login with proper credentials', 401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'}
-    )
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # If already authenticated, redirect to index
+    if session.get('authenticated'):
+        pxc.logger.info("User already authenticated, redirecting to index")
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        pxc.logger.info(f"Login attempt for user: {username}")
+
+        # Add debug logging for config reading
+        try:
+            config = read_config('config/config.yaml', pxc.logger, config_schema)
+            if 'webui' in config:
+                pxc.logger.debug("Found webui section in config")
+                if 'user' in config['webui']:
+                    pxc.logger.debug(f"Found admin user in config: {config['webui']['user']}")
+                if 'password' in config['webui']:
+                    pxc.logger.debug("Found password in config")
+        except Exception as e:
+            pxc.logger.error(f"Error reading config during login: {str(e)}")
+
+        if check_auth(username, password):
+            pxc.logger.info("Authentication successful")
+            session['authenticated'] = True
+            return redirect(request.args.get('next') or url_for('index'))
+        else:
+            pxc.logger.warning("Authentication failed")
+    return render_template('login.html')
 
 
 def requires_auth(f):
@@ -52,19 +73,25 @@ def requires_auth(f):
             '/play_single',
             '/stop',
             '/play',
-            '/static'
+            '/static',
+            '/login',  # Add login to public paths
         ]
 
         # Check if the current path starts with any of the public paths
         if any(request.path.startswith(path) for path in public_paths):
             return f(*args, **kwargs)
 
-        auth = request.authorization
-        if not auth or not check_auth(auth.username, auth.password):
-            return authenticate()
-        return f(*args, **kwargs)
+        if not session.get('authenticated'):
+            return redirect(url_for('login', next=request.url))
 
+        return f(*args, **kwargs)
     return decorated
+
+
+@app.route('/logout')
+def logout():
+    session.pop('authenticated', None)
+    return redirect(url_for('login'))
 
 # Main routes
 @app.route('/')
