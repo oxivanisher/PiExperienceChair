@@ -13,7 +13,6 @@ log_level = logging.INFO
 if os.getenv('DEBUG', False):
     logging.getLogger('werkzeug').setLevel(logging.DEBUG)
 
-
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
@@ -28,7 +27,6 @@ def check_auth(username, password):
     except Exception as e:
         pxc.logger.error(f"Error checking authentication: {str(e)}")
     return False
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -62,7 +60,6 @@ def login():
             pxc.logger.warning("Authentication failed")
     return render_template('login.html')
 
-
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -86,7 +83,6 @@ def requires_auth(f):
 
         return f(*args, **kwargs)
     return decorated
-
 
 @app.route('/logout')
 def logout():
@@ -138,7 +134,6 @@ def index():
                            alert_message=alert_message,
                            config_content=current_config_content)
 
-
 @app.route('/status')
 @requires_auth
 def status():
@@ -154,7 +149,6 @@ def status():
                            config_content=current_config_content,
                            mqtt_messages=pxc.last_messages,
                            alert_message=alert_message)
-
 
 @app.route('/config')
 @requires_auth
@@ -172,7 +166,6 @@ def config():
                            config_content=current_config_content,
                            alert_message=alert_message)
 
-
 # Player routes (no auth required)
 @app.route('/player')
 def player():
@@ -188,68 +181,52 @@ def player():
                            config_content=current_config_content,
                            alert_message=alert_message)
 
-
 @app.route('/play')
 def play():
     try:
         pxc.logger.info("Starting play all")
-        pxc.play()
-        return jsonify({'status': 'success'})
+        pxc.send_play()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'success'})
+        return redirect(url_for("index"))
     except Exception as e:
         pxc.logger.error(f"Error starting play all: {str(e)}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+        return redirect(url_for("index"))
 
 @app.route('/play_single/<int:scene_index>')
 def play_single(scene_index):
     try:
         pxc.logger.info(f"Playing single scene {scene_index}")
+        pxc.send_play_single(scene_index)
 
-        # Check MQTT client status
-        if not pxc.mqtt_client.is_connected():
-            pxc.logger.error("MQTT client is not connected")
-            return jsonify({
-                'status': 'error',
-                'message': 'MQTT client is not connected'
-            }), 500
-
-        # Send MQTT message to trigger videoplayer's play_single
-        command_topic = f"{pxc.mqtt_config['base_topic']}/control"
-        command_message = f"play_single_{scene_index}"
-        result = pxc.mqtt_client.publish(command_topic, command_message)
-
-        if result.rc != 0:
-            pxc.logger.error(f"Failed to publish MQTT message, result code: {result.rc}")
-            return jsonify({
-                'status': 'error',
-                'message': f'Failed to publish MQTT message, result code: {result.rc}'
-            }), 500
-
-        return jsonify({
-            'status': 'success',
-            'scene': scene_index
-        })
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'success', 'scene': scene_index})
+        return redirect(url_for("index"))
 
     except Exception as e:
         pxc.logger.error(f"Error playing scene {scene_index}: {str(e)}")
         import traceback
         pxc.logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
-
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'error','message': str(e)}), 500
+        return redirect(url_for("index"))
 
 @app.route('/stop')
 def stop():
     try:
         pxc.logger.info("Stopping playback")
         pxc.send_stop()
-        return jsonify({'status': 'success'})
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'success'})
+        return redirect(url_for("index"))
     except Exception as e:
         pxc.logger.error(f"Error stopping playback: {str(e)}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+        return redirect(url_for("index"))
 
 @app.route('/get_current_scene')
 def get_current_scene():
@@ -308,28 +285,30 @@ def get_current_scene():
 
     return jsonify({'scene': current_scene, 'scene_index': scene_index})
 
-
 @app.route('/next')
-@requires_auth
 def next():
     pxc.send_next()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'success'})
     return redirect(url_for("index"))
 
 
 @app.route('/prev')
-@requires_auth
 def prev():
     pxc.send_prev()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'success'})
     return redirect(url_for("index"))
 
-
+# Admin routs which require auth
 @app.route('/quit')
 @requires_auth
 def quit():
     pxc.send_quit()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'success', 'message': "Services are being restarted"})
     alert_message = "Please wait, all services excluding the webinterface and the videoplayer are being restarted."
     return render_template('wait.html', alert_message=alert_message)
-
 
 @app.route('/force_restart')
 @requires_auth
@@ -337,9 +316,10 @@ def force_restart():
     pxc.send_stop()
     with open("tmp/force_restart", "w") as text_file:
         text_file.write("Force restart requested %s" % time.time())
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'success', 'message': "All services are being restarted"})
     alert_message = "Please wait, all services including the webinterface and the videoplayer are being restarted."
     return render_template('wait.html', alert_message=alert_message)
-
 
 @app.route('/reboot_computer')
 @requires_auth
@@ -347,9 +327,10 @@ def reboot_computer():
     pxc.send_reboot()
     with open("tmp/reboot_computer", "w") as text_file:
         text_file.write("Force system reboot from webui at %s" % time.time())
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'success', 'message': "System is rebooting"})
     alert_message = "Please wait, the computer is rebooting"
     return render_template('wait.html', alert_message=alert_message)
-
 
 @app.route('/shutdown_computer')
 @requires_auth
@@ -357,9 +338,10 @@ def shutdown_computer():
     pxc.send_shutdown()
     with open("tmp/shutdown_computer", "w") as text_file:
         text_file.write("Force system shutdown from webui at %s" % time.time())
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'status': 'success', 'message': "System is shutting down"})
     alert_message = "The computer is shut down."
     return render_template('wait.html', alert_message=alert_message)
-
 
 # Filters
 @app.template_filter('strftime')

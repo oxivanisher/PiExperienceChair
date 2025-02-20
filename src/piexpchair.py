@@ -224,9 +224,9 @@ class PiExpChair:
                 elif msg.payload.decode() == "shutdown":
                     self.logger.info("Received shutdown command")
                     self.shutdown()
-                elif "play_single_" in msg.payload.decode(): # yes ... I puked a little in my mouth when i wrote this
+                elif "play_single_" in msg.payload.decode(): # yes ... I puked a little in my mouth when I wrote this
                     scene_index = int(msg.payload.decode().replace("play_single_", ""))
-                    self.logger.info("Received play_single command for index {scene_index}")
+                    self.logger.info(f"Received play_single command for index {scene_index}")
                     self.play_single(scene_index)
         except Exception as e:
             self.logger.warning("Error processing message in on_message:", e)
