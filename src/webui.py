@@ -244,7 +244,7 @@ def play_single(scene_index):
 def stop():
     try:
         pxc.logger.info("Stopping playback")
-        pxc.stop()
+        pxc.send_stop()
         return jsonify({'status': 'success'})
     except Exception as e:
         pxc.logger.error(f"Error stopping playback: {str(e)}")
