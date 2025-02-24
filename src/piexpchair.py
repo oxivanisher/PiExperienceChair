@@ -65,11 +65,16 @@ config_schema = Schema({
             }
         }
     },
+    "novastar": {
+        "controller_ip": str,
+        "controller_port": int
+    },
     "idle": {
         "file": str,
         "i2c_outputs": {Optional(str): bool},
         "arduino_outputs": {Optional(str): int},
-        "wled_outputs": {Optional(int): str}
+        "wled_outputs": {Optional(int): str},
+        Optional("novastar_output"): int,
     },
     "scenes": [{
         "name": str,
@@ -81,7 +86,8 @@ config_schema = Schema({
             "start_time": float,
             Optional("i2c_outputs"): {str: bool},
             Optional("arduino_outputs"): {str: int},
-            Optional("wled_outputs"): {And(int, lambda x: 0 <= x <= 32): str}
+            Optional("wled_outputs"): {And(int, lambda x: 0 <= x <= 32): str},
+            Optional("novastar_output"): int
         }]
     }]
 })

@@ -91,6 +91,10 @@ wled:
       speed: 200
       intensity: 180
 
+novastar:
+  controller_ip: 192.168.1.42
+  controller_port: 5200
+
 idle:
   file: idle.mp4
   i2c_outputs:
@@ -103,6 +107,7 @@ idle:
   wled_outputs:
     0: strip_off
     1: strip_off
+    novastar_output: 1
 
 scenes:
   - name: desert
@@ -122,6 +127,7 @@ scenes:
         wled_outputs:
           0: orange_warm
           1: orange_dark
+        novastar_output: 2
       - start_time: 10.2
         i2c_outputs:
           massage: true
@@ -155,6 +161,7 @@ scenes:
         wled_outputs:
           0: orange_warm
           1: orange_dark
+        novastar_output: 3
       - start_time: 3.2
         i2c_outputs:
           massage: true
@@ -188,6 +195,7 @@ scenes:
         wled_outputs:
           0: orange_warm
           1: orange_dark
+        novastar_output: 4
       - start_time: 3.2
         i2c_outputs:
           massage: true

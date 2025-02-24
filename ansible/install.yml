@@ -8,6 +8,7 @@
     services:
       - piexpchair_i2c.service
       - piexpchair_wled.service
+      - piexpchair_novastar.service
       - piexpchair_videoplayer.service
       - piexpchair_webui.service
       - piexpchair_watchdog.service
