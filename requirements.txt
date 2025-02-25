@@ -1,0 +1,8 @@
+paho-mqtt>=2.0.0
+Flask
+pyyaml
+RPi.GPIO; platform_system == "Linux" and "aarch64" in platform_machine
+smbus2
+requests
+adafruit-circuitpython-mcp230xx
+schema

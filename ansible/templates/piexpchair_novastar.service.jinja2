@@ -1,0 +1,21 @@
+# {{ ansible_managed }}
+[Unit]
+Description=PiExperience Chair wled module
+
+[Service]
+ExecStart={{ target_directory }}/venv/bin/python3 {{ target_directory }}/src/novastar.py
+WorkingDirectory={{ target_directory }}
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+Type=simple
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=piexpchair_novastar
+NotifyAccess=all
+User={{ target_user }}
+Group={{ target_user }}
+Nice=1
+
+[Install]
+WantedBy=multi-user.target

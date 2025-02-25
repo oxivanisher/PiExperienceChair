@@ -1,0 +1,33 @@
+---
+- name: Disable onboard audio since VLC is too stupid
+  ansible.builtin.copy:
+    content: "blacklist snd_bcm2835"
+    dest: "/etc/modprobe.d/alsa-blacklist.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reboot_pi
+  become: true
+  become_user: root
+
+- name: Ensure HDMI does report audio capability
+  ansible.builtin.lineinfile:
+    path: "/boot/firmware/config.txt"
+    line: "hdmi_ignore_edid_audio=0"
+    regexp: "^hdmi_ignore_edid_audio="
+  notify: Reboot_pi
+  become: true
+  become_user: root
+
+- name: Disable the usage of the onboard audio device
+  ansible.builtin.lineinfile:
+    path: "/boot/firmware/config.txt"
+    line: "dtparam=audio=off"
+    regexp: "^dtparam=audio="
+  notify: Reboot_pi
+  become: true
+  become_user: root
+
+- name: Set audio output device in vlc script to HDMI
+  ansible.builtin.set_fact:
+    audio_device: "0,0"

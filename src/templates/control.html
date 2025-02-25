@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Seat control{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+    <h3>Multimedia control</h3>
+    <div class="button-container">
+        <form method="get" action="{{ url_for('play') }}">
+            <button class="btn btn-primary btn-sm" type="submit" name="action" value="play">Play All</button>
+        </form>
+        <form method="get" action="{{ url_for('stop') }}">
+            <button class="btn btn-secondary btn-sm" type="submit" name="action" value="stop">Stop</button>
+        </form>
+        <form method="get" action="{{ url_for('next') }}">
+            <button class="btn btn-success btn-sm" type="submit" name="action" value="next">Next</button>
+        </form>
+        <form method="get" action="{{ url_for('prev') }}">
+            <button class="btn btn-success btn-sm" type="submit" name="action" value="prev">Previous</button>
+        </form>
+    </div>
+
+    <h3>Available scenes</h3>
+    <div class="scenes-container">
+        {% for scene in config_content.scenes %}
+        <form method="get" action="{{ url_for('play_single', scene_index=loop.index0) }}" class="scene-button">
+            <button class="btn btn-info btn-sm" type="submit" title="Play this scene once and return to idle">
+                {{ scene.name }}
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+
+    <h3>System control</h3>
+        <div class="button-container">
+        <form method="get" action="{{ url_for('quit') }}">
+            <button class="btn btn-danger btn-sm" type="submit" name="action" value="quit">Quit services</button>
+        </form>
+        <form method="get" action="{{ url_for('force_restart') }}">
+            <button class="btn btn-danger btn-sm" type="submit" name="action" value="force_restart">Kill services</button>
+        </form>
+    </div>
+    <div class="button-container">
+        <form method="get" action="{{ url_for('reboot_computer') }}">
+            <button class="btn btn-danger btn-sm" type="submit" name="action" value="force_restart">Reboot Pi</button>
+        </form>
+        <form method="get" action="{{ url_for('shutdown_computer') }}">
+            <button class="btn btn-danger btn-sm" type="submit" name="action" value="force_restart">Shutdown Pi</button>
+        </form>
+    </div>
+
+    <h3>Current scene</h3>
+    {{ current_scene }}
+
+    <h3>Last scenes played</h3>
+    <ul class="list-group list-group-flush">
+        {% for date in last_scenes %}
+        <li class="list-group-item">{{ date | strftime }}: {{ last_scenes[date] }}</li>
+        {% endfor %}
+    </ul>
+    <script>
+        function checkRouteAvailability() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '{{ url_for('index') }}', true);
+            xhr.onload = function() {
+                if (xhr.status == 200) {
+                    location.reload();
+                } else {
+                    setTimeout(checkRouteAvailability, 5000);
+                }
+            };
+            xhr.onerror = function() {
+                setTimeout(checkRouteAvailability, 5000);
+            };
+            xhr.send();
+        }
+        setTimeout(checkRouteAvailability, 5000);
+    </script>
+{% endblock %}

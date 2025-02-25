@@ -1,0 +1,7 @@
+---
+
+host: localhost
+port: 1883
+base_topic: exchair
+user: someuser
+password: supersecretpassword
