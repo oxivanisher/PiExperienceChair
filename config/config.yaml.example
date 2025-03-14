@@ -4,7 +4,6 @@ videoplayer:
   rc_socket: /tmp/vlc_rc.sock
 
 webui:
-  pause_button_image: stop.png
   user: admin
   password: super_secret
 

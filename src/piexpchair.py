@@ -31,7 +31,6 @@ broker_schema = Schema({
 config_schema = Schema({
     "videoplayer": {"media_path": str, "rc_socket": str},
     "webui": {
-        "pause_button_image": str,
         "user": str,
         "password": str
     },

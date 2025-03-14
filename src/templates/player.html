@@ -78,7 +78,31 @@
         }
 
         .play-all {
-            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            z-index: 1000;
+            display: block;
+            transition: transform 0.2s;
+        }
+
+        .play-all:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .play-all:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .play-all img {
+            width: 150px;
+            height: auto;
+            display: block;
         }
 
         .stop-button {
@@ -136,11 +160,14 @@
     <title>Experience Chair Player</title>
 </head>
 <body>
-    <button class="play-all" onclick="playAll()">Play All Scenes</button>
+    <button class="play-all" onclick="playAll()">
+        <img src="{{ url_for('static', filename='images/play_all_button.png') }}" alt="Play all">
+    </button>
+    <!--
     <button class="stop-button" onclick="stopPlayback()">
         <img src="{{ url_for('static', filename='images/stop_button.png') }}" alt="Stop">
     </button>
-
+    -->
     <div class="scene-grid">
     {% for scene in config_content.scenes %}
         <button class="scene-button" id="scene-{{ loop.index0 }}" onclick="toggleScene({{ loop.index0 }})">
