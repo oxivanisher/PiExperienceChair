@@ -2,6 +2,7 @@ from piexpchair import PiExpChair
 
 import socket
 import struct
+import time
 
 """
 # Step 1: Initialize Program List
@@ -26,6 +27,7 @@ exit_cmd = bytes.fromhex("55AA0001FC000800000001000C0000000100055E56")
 # send_command(resume_cmd)  # Resume playback
 # send_command(exit_cmd)    # Exit current playback
 """
+CONNECT_COMMAND = "aa55000000fe0000000000000200000002000a218256"
 
 class NovastarController(PiExpChair):
     def __init__(self):
@@ -33,6 +35,23 @@ class NovastarController(PiExpChair):
 
         if self.terminate:
             return
+
+
+        # test_cmd = bytes.fromhex("55AA0001FC000000000000002A00000001007D56")  # Example test command
+        # response = self.send_command(test_cmd)
+        # print(f"Test Response: {response.hex()}")
+        #
+        # status_cmd = bytes.fromhex("55AA0001FC000800000000000C00000001005E56")  # Init list command
+        # response = self.send_command(status_cmd)
+        # self.logger.debug(f"Status Response: {response.hex()}")
+        #
+        # # Step 1: Initialize Program List
+        # init_program_list_cmd = bytes.fromhex("55AA0001FC000800000000000C00000001005E56")
+        # response = self.send_command(init_program_list_cmd)
+        #
+        # # Extract the number of programs (last byte of response before checksum)
+        # num_programs = response[-3] if len(response) > 3 else 0
+        # self.logger.debug(f"Total Programs found: {num_programs}")
 
     # Helper function to send commands
     def calculate_checksum(self, data):
@@ -52,6 +71,7 @@ class NovastarController(PiExpChair):
 
         # Calculate checksum
         checksum = self.calculate_checksum(command)
+        self.logger.debug(f"Calculated Checksum: {checksum:04X}")  # Log as hex
 
         # Append checksum as 2 bytes
         command += struct.pack(">H", checksum)
@@ -61,10 +81,43 @@ class NovastarController(PiExpChair):
     def send_command(self, command):
         """Sends a TCP command to the TU15 Pro."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((self.config['novastar']['controller_ip'], self.config['novastar']['controller_port']))
-            s.sendall(command)
-            response = s.recv(1024)
-            self.logger.debug(f"Response: {response.hex()}")
+            s.settimeout(5)  # 5 seconds timeout
+            self.logger.debug(
+                f"Connecting to {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
+            try:
+                s.connect((self.config['novastar']['controller_ip'], self.config['novastar']['controller_port']))
+            except socket.timeout:
+                self.logger.error("Connection timed out!")
+                return None
+            except socket.error as e:
+                self.logger.error(f"Socket error: {e}")
+                return None
+
+            self.logger.debug(f"Sending connect command: {bytes.fromhex(CONNECT_COMMAND)}")
+            try:
+                s.sendall(bytes.fromhex(CONNECT_COMMAND))
+                self.logger.debug(f"Waiting for response")
+                response = b""
+                while True:
+                    chunk = s.recv(1024)
+                    if not chunk:
+                        break
+                    response += chunk
+                self.logger.debug(f"Connect response: {response.hex()}")
+
+                self.logger.debug(f"Sending command: {command}")
+                s.sendall(command)
+                self.logger.debug(f"Waiting for response")
+                response = b""
+                while True:
+                    chunk = s.recv(1024)
+                    if not chunk:
+                        break
+                    response += chunk
+                self.logger.debug(f"Full Response: {response.hex()}")
+            except socket.timeout:
+                self.logger.warning("Connection timed out!")
+
             return response
 
     def play_video(self, file_index):
