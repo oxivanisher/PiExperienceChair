@@ -343,6 +343,15 @@ def shutdown_computer():
     alert_message = "The computer is shut down."
     return render_template('wait.html', alert_message=alert_message)
 
+# Routes for managing YAML configuration file
+@app.route('/save_config', methods=['POST'])
+def save_config():
+    # Save modified config content
+    new_config_content = request.form['config']
+    with open('config/config.yaml', 'w') as file:
+        file.write(new_config_content)
+    return redirect(url_for("index"))
+
 # Filters
 @app.template_filter('strftime')
 def _filter_datetime(timestamp, format=None):
