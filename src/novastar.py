@@ -10,9 +10,10 @@ class NovastarController(PiExpChair):
         if self.terminate:
             return
 
-        self.logger.info(f"Initialize Program List on Novastar Controller: {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
-        response = self.send_command("55AA0001FC000800000001000C000000020002055E56")
-        self.logger.info(f"Received the response from the Novastar Controller: {response.hex()}")
+        self.logger.info(f"Initialize program list on Novastar controller: {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
+        if not self.send_command("55AA0001FC000800000001000C000000020002055E56"):
+            self.logger.error("Failed to initialize program list, unable to connect to Novastar controller. Exiting.")
+            self.terminate = True
 
     def build_play_command(self, file_index):
         return f"55AA0001FC000800000001000C000000020002{file_index:02x}5E56"
@@ -20,13 +21,14 @@ class NovastarController(PiExpChair):
     def send_command(self, command):
         binary_data = bytes.fromhex(command)
 
-        with socket.create_connection((self.config['novastar']['controller_ip'], int(self.config['novastar']['controller_port'])), timeout=1) as s:
-            self.logger.debug(
-                f"Connecting to {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
-            try:
+        try:
+            with socket.create_connection((self.config['novastar']['controller_ip'], int(self.config['novastar']['controller_port'])), timeout=1) as s:
+                self.logger.debug(
+                    f"Connecting to {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
+
                 self.logger.debug(f"Sending command: {command}")
                 s.sendall(binary_data)
-                s.settimeout(1)  # Set a timeout for recv
+                s.settimeout(3)  # Set a timeout for recv
                 self.logger.debug(f"Waiting for response")
                 response = b""
                 while True:
@@ -38,19 +40,19 @@ class NovastarController(PiExpChair):
                     if not chunk:
                         break
                     response += chunk
-                self.logger.debug(f"Full Response: {response.hex()}")
+                self.logger.info(f"Received the response from the Novastar Controller: {response.hex()}")
+                return True
 
-            except socket.timeout:
-                self.logger.error("Connection timed out!")
-                return None
-            except socket.error as e:
-                self.logger.error(f"Socket error: {e}")
-                return None
-
-            return response
+        except socket.timeout:
+            self.logger.error("Connection timed out!")
+            return False
+        except socket.error as e:
+            self.logger.error(f"Socket error: {e}")
+            return False
 
     def play_video(self, file_index):
-        return self.send_command(self.build_play_command(file_index))
+        if not self.send_command(self.build_play_command(file_index)):
+            self.logger.warning(f"Failed to play video index {file_index}!")
 
     def apply_scene_outputs(self, current_outputs):
         if 'novastar_output' in current_outputs:
