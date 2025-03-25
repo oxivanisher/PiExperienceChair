@@ -1,33 +1,7 @@
 from piexpchair import PiExpChair
 
 import socket
-import struct
-import time
-
-"""
-# Step 1: Initialize Program List
-init_program_list_cmd = bytes.fromhex("55AA0001FC000800000000000C00000001005E56")
-response = send_command(init_program_list_cmd)
-
-# Extract the number of programs (last byte of response before checksum)
-num_programs = response[-3] if len(response) > 3 else 0
-print(f"Total Programs: {num_programs}")
-
-# Step 2: Play the first program (Modify '0201' to select another program)
-play_program_cmd = bytes.fromhex("55AA0001FC000800000001000C000000020002015E56")
-send_command(play_program_cmd)
-
-# Step 3: Example additional controls
-pause_cmd = bytes.fromhex("55AA0001FC000800000001000C0000000100035E56")
-resume_cmd = bytes.fromhex("55AA0001FC000800000001000C0000000100045E56")
-exit_cmd = bytes.fromhex("55AA0001FC000800000001000C0000000100055E56")
-
-# Uncomment to use playback controls:
-# send_command(pause_cmd)   # Pause playback
-# send_command(resume_cmd)  # Resume playback
-# send_command(exit_cmd)    # Exit current playback
-"""
-CONNECT_COMMAND = "aa55000000fe0000000000000200000002000a218256"
+import select
 
 class NovastarController(PiExpChair):
     def __init__(self):
@@ -36,56 +10,36 @@ class NovastarController(PiExpChair):
         if self.terminate:
             return
 
-
-        # test_cmd = bytes.fromhex("55AA0001FC000000000000002A00000001007D56")  # Example test command
-        # response = self.send_command(test_cmd)
-        # print(f"Test Response: {response.hex()}")
-        #
-        # status_cmd = bytes.fromhex("55AA0001FC000800000000000C00000001005E56")  # Init list command
-        # response = self.send_command(status_cmd)
-        # self.logger.debug(f"Status Response: {response.hex()}")
-        #
-        # # Step 1: Initialize Program List
-        # init_program_list_cmd = bytes.fromhex("55AA0001FC000800000000000C00000001005E56")
-        # response = self.send_command(init_program_list_cmd)
-        #
-        # # Extract the number of programs (last byte of response before checksum)
-        # num_programs = response[-3] if len(response) > 3 else 0
-        # self.logger.debug(f"Total Programs found: {num_programs}")
-
-    # Helper function to send commands
-    def calculate_checksum(self, data):
-        """Calculates the checksum by summing all bytes and adding 0x5555."""
-        checksum = sum(data) + 0x5555
-        return checksum & 0xFFFF  # Ensure it's 2 bytes
+        self.logger.info(f"Initialize Program List on Novastar Controller: {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
+        response = self.send_command("55AA0001FC000800000001000C000000020002055E56")
+        self.logger.info(f"Received the response from the Novastar Controller: {response.hex()}")
 
     def build_play_command(self, file_index):
-        """Builds the correct TCP command to play a specific video by index."""
-        command_base = bytes.fromhex("55AA0001FC000800000001000C00000002")
-
-        # Convert index to bytes (e.g., 1 -> 0x0201, 2 -> 0x0202)
-        file_index_bytes = struct.pack(">H", file_index)  # Big-endian format
-
-        # Construct full command (excluding checksum for now)
-        command = command_base + file_index_bytes
-
-        # Calculate checksum
-        checksum = self.calculate_checksum(command)
-        self.logger.debug(f"Calculated Checksum: {checksum:04X}")  # Log as hex
-
-        # Append checksum as 2 bytes
-        command += struct.pack(">H", checksum)
-
-        return command
+        return f"55AA0001FC000800000001000C000000020002{file_index:02x}5E56"
 
     def send_command(self, command):
-        """Sends a TCP command to the TU15 Pro."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(5)  # 5 seconds timeout
+        binary_data = bytes.fromhex(command)
+
+        with socket.create_connection((self.config['novastar']['controller_ip'], self.config['novastar']['controller_port']), timeout=3) as s:
             self.logger.debug(
                 f"Connecting to {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
             try:
-                s.connect((self.config['novastar']['controller_ip'], self.config['novastar']['controller_port']))
+                self.logger.debug(f"Sending command: {command}")
+                s.sendall(binary_data)
+                s.settimeout(1)  # Set a timeout for recv
+                self.logger.debug(f"Waiting for response")
+                response = b""
+                while True:
+                    ready, _, _ = select.select([s], [], [], 1)
+                    if not ready:
+                        break
+
+                    chunk = s.recv(1024)
+                    if not chunk:
+                        break
+                    response += chunk
+                self.logger.debug(f"Full Response: {response.hex()}")
+
             except socket.timeout:
                 self.logger.error("Connection timed out!")
                 return None
@@ -93,38 +47,10 @@ class NovastarController(PiExpChair):
                 self.logger.error(f"Socket error: {e}")
                 return None
 
-            self.logger.debug(f"Sending connect command: {bytes.fromhex(CONNECT_COMMAND)}")
-            try:
-                s.sendall(bytes.fromhex(CONNECT_COMMAND))
-                self.logger.debug(f"Waiting for response")
-                response = b""
-                while True:
-                    chunk = s.recv(1024)
-                    if not chunk:
-                        break
-                    response += chunk
-                self.logger.debug(f"Connect response: {response.hex()}")
-
-                self.logger.debug(f"Sending command: {command}")
-                s.sendall(command)
-                self.logger.debug(f"Waiting for response")
-                response = b""
-                while True:
-                    chunk = s.recv(1024)
-                    if not chunk:
-                        break
-                    response += chunk
-                self.logger.debug(f"Full Response: {response.hex()}")
-            except socket.timeout:
-                self.logger.warning("Connection timed out!")
-
             return response
 
     def play_video(self, file_index):
-        """Plays a specific video based on its index."""
-        command = self.build_play_command(file_index)
-        response = self.send_command(command)
-        return response
+        return self.send_command(self.build_play_command(file_index))
 
     def apply_scene_outputs(self, current_outputs):
         if 'novastar_output' in current_outputs:
