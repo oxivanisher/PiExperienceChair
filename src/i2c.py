@@ -126,14 +126,15 @@ class I2cController(PiExpChair):
             # Write the data to the I2C bus
             while not i2c.try_lock():
                 pass
-            try:
-                i2c.writeto(address, data)
-            finally:
-                i2c.unlock()
+
+            i2c.writeto(address, data)
 
             self.logger.debug(f"Sent command to Arduino {address}: pin={output_pin}, value={value}")
         except Exception as e:
-            self.logger.error(f"Error sending command to Arduino at address {address}: {e}")
+            self.logger.warning(f"Error sending command to Arduino at address {address}: {e}")
+
+        finally:
+            i2c.unlock()
 
     def set_arduino_output(self, device_name, value):
         """
