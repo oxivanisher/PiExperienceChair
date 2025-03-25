@@ -20,7 +20,7 @@ class NovastarController(PiExpChair):
     def send_command(self, command):
         binary_data = bytes.fromhex(command)
 
-        with socket.create_connection((self.config['novastar']['controller_ip'], self.config['novastar']['controller_port']), timeout=3) as s:
+        with socket.create_connection((self.config['novastar']['controller_ip'], int(self.config['novastar']['controller_port'])), timeout=1) as s:
             self.logger.debug(
                 f"Connecting to {self.config['novastar']['controller_ip']}:{self.config['novastar']['controller_port']}")
             try:
