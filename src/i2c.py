@@ -26,7 +26,7 @@ class I2cController(PiExpChair):
         for key in self.config['i2c']['output']:
             i2c_addresses.append(self.config['i2c']['output'][key]['address'])
         i2c_addresses = list(set(i2c_addresses))
-        self.logger.debug(f"Detected MCP23017 i2c addresses (as int): {i2c_addresses}")
+        self.logger.debug(f"Found MCP23017 i2c addresses (as int) in config: {i2c_addresses}")
 
         # Get Arduino addresses if configured
         self.arduino_devices = {}
@@ -34,13 +34,13 @@ class I2cController(PiExpChair):
             for device_name, device_config in self.config['i2c']['arduino_devices'].items():
                 self.arduino_devices[device_name] = device_config
                 self.logger.debug(
-                    f"Registered Arduino device {device_name} at address: {hex(device_config['address'])}")
+                    f"Found Arduino device {device_name} in config at address: {hex(device_config['address'])}")
 
         self.mcp = {}
         self.input_states = {}
 
         for addr in i2c_addresses:
-            self.logger.debug(f"Register mcp for i2c address: {hex(addr)}")
+            self.logger.debug(f"Setup mcp for i2c address: {hex(addr)}")
             self.mcp[addr] = MCP23017(i2c, addr)  # creates an MCP object with the given address
 
         self.i2c_inputs = {}
