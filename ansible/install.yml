@@ -13,6 +13,7 @@
       - piexpchair_webui.service
       - piexpchair_watchdog.service
     force_hdmi: true
+    service_debug:  # empty for no debug, set to anything to enable debug on systemd units
     vlc_audio_device: #  i.e. hw:0,0
 
   tasks:
@@ -99,6 +100,7 @@
         group: root
         mode: "0644"
       loop: "{{ services }}"
+      notify: Trigger_watchtog
 
     - name: Enable and start systemd services
       ansible.builtin.systemd_service:
