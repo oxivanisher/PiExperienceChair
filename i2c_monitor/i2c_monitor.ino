@@ -1,6 +1,6 @@
 #include <Wire.h>
 
-#define I2C_ADDRESS 0x20
+#define I2C_ADDRESS 0x22
 
 struct DataPacket {
   char val1;
@@ -21,7 +21,7 @@ void receiveEvent(int bytesReceived) {
 
 void setup() {
   Serial.begin(115200);
-  Serial.printf("i2c monitor on 0x20 running...\n");
+  Serial.printf("i2c monitor on 0x22 running...\n");
   Wire.begin(I2C_ADDRESS); // ESP8266 as an I2C slave
   Wire.onReceive(receiveEvent);
 }
