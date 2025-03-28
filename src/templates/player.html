@@ -66,15 +66,17 @@
             justify-content: center;
         }
 
+        {#
         .scene-button:hover {
             transform: scale(1.02);
         }
+        #}
 
         .scene-button img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 10px;
+            border-radius: 5px;
         }
 
         .play-all {
@@ -91,16 +93,20 @@
             transition: transform 0.2s;
         }
 
+        {#
         .play-all:hover {
             transform: translate(-50%, -50%) scale(1.1);
         }
+        #}
 
+        {#
         .play-all:active {
             transform: translate(-50%, -50%) scale(0.95);
         }
+        #}
 
         .play-all img {
-            width: 150px;
+            {# width: 150px; #}
             height: auto;
             display: block;
         }
@@ -119,16 +125,20 @@
             transition: transform 0.2s;
         }
 
+        {#
         .stop-button:hover {
             transform: translate(-50%, -50%) scale(1.1);
         }
+        #}
 
+        {#
         .stop-button:active {
             transform: translate(-50%, -50%) scale(0.95);
         }
+        #}
 
         .stop-button img {
-            width: 150px;
+            {# width: 150px; #}
             height: auto;
             display: block;
         }
