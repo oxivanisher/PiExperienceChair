@@ -25,7 +25,7 @@ ansible-playbook -i localhost install.yml --ask-become-pass
 How to create a idle animation video from a picture:
 ```bash
 convert "some_image.jpg_or.png" -verbose -resize 1920x1080 -background white -gravity center -extent 1920x1080 "/tmp/image_1.jpg"
-ffmpeg -y -framerate "0.01" -i "/tmp/image_%d.jpg" -c:v libx264 -r 5 -pix_fmt yuvj444p -preset veryslow -tune stillimage idle.mp4
+ffmpeg -y -framerate "0.01" -i "/tmp/image_%d.jpg" -c:v libx264 -r 5 -pix_fmt yuv420p -preset veryslow -tune stillimage idle.mp4
 ```
 ## Get video duration
 You can use ffprobe to get the exact duration of a video like this:
