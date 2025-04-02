@@ -177,8 +177,10 @@ def player():
         alert_message = message
         current_config_content = {}
 
+    sorted_scenes = sorted(enumerate(current_config_content["scenes"]), key=lambda x: x[1]["webplayer_ordering"])
     return render_template('player.html',
-                           config_content=current_config_content,
+                           sorted_scenes=sorted_scenes,
+                           # config_content=current_config_content,
                            alert_message=alert_message)
 
 @app.route('/play')
