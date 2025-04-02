@@ -179,7 +179,7 @@
     </button>
     -->
     <div class="scene-grid">
-    {% for index, scene in config_content.scenes | sort(attribute='webplayer_priority') | enumerate %}
+    {% for index, scene in config_content.scenes | sort(attribute='webplayer_ordering') | enumerate %}
     <button class="scene-button" id="scene-{{ index }}" onclick="toggleScene({{ index }})">
         <img src="{{ url_for('static', filename='images/' + scene.image) }}"
              alt="{{ scene.name }}"
