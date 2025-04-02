@@ -81,7 +81,7 @@ config_schema = Schema({
         "image": str,
         "image_active": str,
         "duration": float,
-        "webplayer_priority": int,
+        "webplayer_ordering": int,
         "timed_outputs": [{
             "start_time": float,
             Optional("i2c_outputs"): {str: bool},
