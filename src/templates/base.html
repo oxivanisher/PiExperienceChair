@@ -16,6 +16,20 @@
             padding: 10px 20px;
             margin: 0 5px;
         }
+        .scenes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .scene-button {
+            display: inline-block;
+        }
+        .scene-button .btn {
+            width: 100%;
+            white-space: nowrap;
+        }
     </style>
     {% endblock %}
 </head>
@@ -31,6 +45,14 @@
       <li class="nav-item">
         <a class="nav-link {% if url_for('config') == request.path %}active{% endif %}" href="{{ url_for('config') }}">Config</a>
       </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('player') }}" target="_blank">Player</a>
+      </li>
+      {% if session.authenticated %}
+      <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+      </li>
+      {% endif %}
     </ul>
   <br />
   {% if alert_message %}

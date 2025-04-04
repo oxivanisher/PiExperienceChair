@@ -7,10 +7,13 @@
     target_directory: "/home/{{ target_user }}/PiExperienceChair"
     services:
       - piexpchair_i2c.service
+      - piexpchair_wled.service
+      - piexpchair_novastar.service
       - piexpchair_videoplayer.service
       - piexpchair_webui.service
       - piexpchair_watchdog.service
     force_hdmi: true
+    service_debug:  # empty for no debug, set to anything to enable debug on systemd units
     vlc_audio_device: #  i.e. hw:0,0
 
   tasks:
@@ -19,7 +22,7 @@
         path: "/boot/firmware/config.txt"
         line: "dtparam=i2c_arm=on"
         state: present
-      when: ansible_distribution == "Raspbian"
+      when: ansible_architecture == "aarch64"
       notify: Reboot_pi
       become: true
       become_user: root
@@ -97,6 +100,7 @@
         group: root
         mode: "0644"
       loop: "{{ services }}"
+      notify: Trigger_watchtog
 
     - name: Enable and start systemd services
       ansible.builtin.systemd_service:
@@ -105,14 +109,26 @@
         enabled: true
         daemon_reload: true
       loop: "{{ services }}"
+      ignore_errors: "{{ ansible_check_mode }}"
 
-    - name: Deploy example broker config
+    - name: Deploy example broker config if none exists
       ansible.builtin.copy:
-        src: "broker.yaml"
+        src: "../config/broker.yaml.example"
         dest: "{{ target_directory }}/config/broker.yaml"
         owner: "{{ target_user }}"
         group: "{{ target_user }}"
         mode: "0640"
+        force: false
+      notify: Trigger_watchtog
+
+    - name: Deploy example PiExperienceChair config if none exists
+      ansible.builtin.copy:
+        src: "../config/config.yaml.example"
+        dest: "{{ target_directory }}/config/config.yaml"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0640"
+        force: false
       notify: Trigger_watchtog
 
     - name: Force HDMI output

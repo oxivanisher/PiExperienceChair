@@ -20,17 +20,76 @@ logging.basicConfig(
     level=log_level
 )
 
-broker_schema = Schema({"host": str, "port": int, "base_topic": str})
+broker_schema = Schema({
+    "host": str,
+    "port": int,
+    "base_topic": str,
+    Optional("user"): str,
+    Optional("password"): str
+})
 
 config_schema = Schema({
-    "videoplayer": {"media_path": str, "rc_socket": str, "idle_animation": str},
-    "i2c": {"input": {"play": {"address": hex, "pin": int},
-                      "stop": {"address": hex, "pin": int},
-                      "next": {"address": hex, "pin": int},
-                      "prev": {"address": hex, "pin": int},
-                      "shutdown": {"address": hex, "pin": int}},
-            "output": {str: {"address": hex, "pin": int}}},
-    "scenes": [{"name": str, "file": str, "i2c_outputs": {str: bool}, "duration": float}]
+    "videoplayer": {"media_path": str, "rc_socket": str},
+    "webui": {
+        "user": str,
+        "password": str
+    },
+    "i2c": {
+        "input": {
+            Optional("play"): {"address": hex, "pin": int},
+            Optional("stop"): {"address": hex, "pin": int},
+            Optional("next"): {"address": hex, "pin": int},
+            Optional("prev"): {"address": hex, "pin": int},
+            Optional("shutdown"): {"address": hex, "pin": int}
+        },
+        "output": {Optional(str): {"address": hex, "pin": int}},
+        "arduino_devices": {Optional(str): {"address": hex, "pin": int}}
+    },
+    "wled": {
+        "settings": {
+          "transition": int
+        },
+        "devices": [str],
+        "colors": {
+            str: [[And(int, lambda x: 0 <= x <= 255)], [And(int, lambda x: 0 <= x <= 255)], [And(int, lambda x: 0 <= x <= 255)]]
+        },
+        "macros": {
+            str: {
+                "brightness": int,
+                "strip_on": bool,
+                "color": str,
+                "effect_id": int,
+                "speed": int,
+                "intensity": int
+            }
+        }
+    },
+    "novastar": {
+        "controller_ip": str,
+        "controller_port": int
+    },
+    "idle": {
+        "file": str,
+        "i2c_outputs": {Optional(str): bool},
+        "arduino_outputs": {Optional(str): int},
+        "wled_outputs": {Optional(int): str},
+        Optional("novastar_output"): int,
+    },
+    "scenes": [{
+        "name": str,
+        "file": str,
+        "image": str,
+        "image_active": str,
+        "duration": float,
+        "webplayer_ordering": int,
+        "timed_outputs": [{
+            "start_time": float,
+            Optional("i2c_outputs"): {str: bool},
+            Optional("arduino_outputs"): {str: int},
+            Optional("wled_outputs"): {And(int, lambda x: 0 <= x <= 32): str},
+            Optional("novastar_output"): int
+        }]
+    }]
 })
 
 
@@ -90,6 +149,9 @@ class PiExpChair:
                                        client_id=self.mqtt_client_id,
                                        protocol=MQTTProtocolVersion.MQTTv5)
 
+        if self.mqtt_config and 'user' in self.mqtt_config.keys() and 'password' in self.mqtt_config.keys():
+            self.mqtt_client.username_pw_set(self.mqtt_config['user'], self.mqtt_config['password'])
+
         if log_level == logging.DEBUG:
             self.logger.debug(f"Enable MQTT logging since DEBUG is enabled")
             self.mqtt_client.enable_logger(self.logger)
@@ -105,6 +167,13 @@ class PiExpChair:
 
         self.last_messages = {}
         self.subscribe_to_everything = subscribe_to_everything
+
+        self.current_scene_start_time = 0.0
+        self.current_output_index = -1
+        self.current_scene_index = -1
+        self.output_check_disabled = False
+
+        self.mqtt_path_identifier = "__super__"
 
         if self.config:
             self.terminate = False
@@ -161,6 +230,10 @@ class PiExpChair:
                 elif msg.payload.decode() == "shutdown":
                     self.logger.info("Received shutdown command")
                     self.shutdown()
+                elif "play_single_" in msg.payload.decode(): # yes ... I puked a little in my mouth when I wrote this
+                    scene_index = int(msg.payload.decode().replace("play_single_", ""))
+                    self.logger.info(f"Received play_single command for index {scene_index}")
+                    self.play_single(scene_index)
         except Exception as e:
             self.logger.warning("Error processing message in on_message:", e)
 
@@ -179,6 +252,10 @@ class PiExpChair:
     def send_play(self):
         self.logger.info("Sending play command")
         self._send_control_command("play")
+
+    def send_play_single(self, scene_index):
+        self.logger.info("Sending play single command")
+        self._send_control_command(f"play_single_{int(scene_index)}")
 
     def send_stop(self):
         self.logger.info("Sending stop command")
@@ -204,6 +281,9 @@ class PiExpChair:
     def play(self):
         self.logger.debug("Method play not implemented")
 
+    def play_single(self, scene_index):
+        self.logger.debug("Method play_single not implemented")
+
     def stop(self):
         self.logger.debug("Method stop not implemented")
 
@@ -215,6 +295,61 @@ class PiExpChair:
 
     def shutdown(self):
         self.logger.debug("Method shutdown not implemented")
+
+    # Output helper methods
+    def apply_scene_outputs(self, config):
+        self.logger.debug("Method apply_scene_outputs not implemented")
+
+    def handle_output_change(self):
+        new_output_index = self.check_for_output_change()
+        if new_output_index >= 0:
+            self.logger.debug(f"New output index {new_output_index}")
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/profile", new_output_index)
+            self.apply_scene_outputs(self.config['scenes'][self.current_scene_index]['timed_outputs'][new_output_index])
+
+    def set_idle_outputs(self):
+        self.logger.debug("Load idle settings")
+        self.check_for_output_change(disable=True)
+        self.apply_scene_outputs(self.config['idle'])
+
+    def check_for_output_change(self, start = False, disable = False):
+        """
+        Returns the index of outputs to be played
+        At the start of a scene, call it with True
+        :return:
+        int: output index
+        """
+
+        if disable:
+            self.output_check_disabled = True
+            return -1
+        if start:
+            self.output_check_disabled = False
+
+        if self.output_check_disabled:
+            return -1
+
+        current_scene = self.config['scenes'][self.current_scene_index]
+        current_time = time.time()
+
+        # Start a new scene
+        if start:
+            self.current_output_index = -1
+            self.current_scene_start_time = current_time
+
+        loop_output_index = -1
+        current_time_delta = current_time - self.current_scene_start_time
+        for timed_output in current_scene['timed_outputs']:
+            if current_time_delta <= timed_output['start_time']:
+                break
+            loop_output_index += 1
+
+        if self.current_output_index != loop_output_index:
+            self.logger.debug(f"Setting output index to {loop_output_index} ({current_time_delta})")
+            self.current_output_index = loop_output_index
+            return loop_output_index
+        else:
+            return -1
 
     # Control methods
     def module_run(self):
