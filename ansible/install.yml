@@ -37,6 +37,7 @@
         - python3-virtualenv
         - swig
         - python3-dev
+        - liblgpio-dev
       become: true
       become_user: root
 
