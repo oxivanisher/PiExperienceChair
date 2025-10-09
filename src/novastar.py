@@ -5,7 +5,7 @@ import select
 
 class NovastarController(PiExpChair):
     def __init__(self):
-        super().__init__()
+        super().__init__(identifier="novastar")
 
         if self.terminate:
             return
@@ -53,6 +53,12 @@ class NovastarController(PiExpChair):
     def play_video(self, file_index):
         if not self.send_command(self.build_play_command(file_index)):
             self.logger.warning(f"Failed to play video index {file_index}!")
+        self.output_notify("video_index", file_index)
+
+    def output_set(self, name, value):
+        self.logger.info(f"Setting {name} to {value}")
+        if name ==  "video_index":
+            self.play_video(value)
 
     def apply_scene_outputs(self, current_outputs):
         if 'novastar_output' in current_outputs:

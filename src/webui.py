@@ -364,7 +364,6 @@ def _filter_datetime(timestamp, format=None):
 
 if __name__ == '__main__':
     pxc = PiExpChair()
-    pxc.__init__(subscribe_to_everything=True)
-    pxc.mqtt_client.loop_start()
+    pxc.__init__(subscribe_to_everything=True, identifier="webui")
     pxc.logger.info(f"Starting flask app in {app.root_path}")
     app.run(debug=os.getenv('DEBUG', False), host="0.0.0.0")

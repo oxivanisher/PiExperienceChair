@@ -4,12 +4,11 @@ import json
 
 class WLEDController(PiExpChair):
     def __init__(self):
-        super().__init__()
+        super().__init__(identifier="wled")
 
         if self.terminate:
             return
 
-        self.mqtt_path_identifier = "wled"
         self.wled_transistion = 20
         if 'wled' in self.config and 'settings' in self.config['wled']:
             if 'transition' in self.config['wled']['settings'].keys():
@@ -42,9 +41,17 @@ class WLEDController(PiExpChair):
                                     "col": colors, "pal": 0}
                     device_output['seg'].append(strip_output)
                     self.logger.debug(f"WLED should to set strip {strip} to macro {macro}")
+                    self.output_notify(f"{device}/{strip}/bri",  macro['brightness'])
 
                 self.logger.debug(f"Sending WLED command over MQTT for {device}")
                 self.mqtt_client.publish(f"wled/{device}/api", json.dumps(device_output))
+
+    def output_set(self, name, value):
+        device, strip, element = name.split("/")
+        self.logger.info(f"Setting {element} on strip {strip} and device {device} to {value}")
+        device_output = {"on": True, "transition": self.wled_transistion, "seg": [{"id": strip, element: value}]}
+        self.mqtt_client.publish(f"wled/{device}/api", json.dumps(device_output))
+        self.output_notify(f"{device}/{strip}/{element}", value)
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         super().on_connect(client, userdata, flags, reason_code, properties)

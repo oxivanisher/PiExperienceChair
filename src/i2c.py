@@ -12,12 +12,10 @@ i2c = busio.I2C(board.SCL, board.SDA)
 
 class I2cController(PiExpChair):
     def __init__(self):
-        super().__init__()
+        super().__init__(identifier="i2c")
 
         if self.terminate:
             return
-
-        self.mqtt_path_identifier = "i2c"
 
         # find all i2c addresses (MCP23017)
         i2c_addresses = []
@@ -108,6 +106,7 @@ class I2cController(PiExpChair):
         self.logger.debug(f"Setting output {output_name} to state: {state}")
         if output_name in self.i2c_outputs:
             self.i2c_outputs[output_name].value = bool(state)
+            self.output_notify(output_name, bool(state))
         else:
             self.logger.warning(f"Unknown output: {output_name}")
 
@@ -152,6 +151,16 @@ class I2cController(PiExpChair):
         value = max(0, min(255, int(value)))
 
         self.send_arduino_command(device['address'], device['pin'], value)
+        self.output_notify(device_name, value)
+
+    def output_set(self, name, value):
+        self.logger.info(f"Setting {name} to {value}")
+        if name in self.arduino_devices.keys():
+            self.logger.debug(f"Found arduino device: {name}")
+            self.set_arduino_output(name, value)
+        if name in self.config['i2c']['output'].keys():
+            self.logger.debug(f"Found i2c output device: {name}")
+            self.set_i2c_output(name, value)
 
     def module_run(self):
         self.handle_output_change()

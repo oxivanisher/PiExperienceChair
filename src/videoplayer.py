@@ -8,7 +8,7 @@ import socket
 
 class VideoPlayer(PiExpChair):
     def __init__(self):
-        super().__init__()
+        super().__init__(identifier="videoplayer")
 
         if self.terminate:
             return
@@ -19,8 +19,6 @@ class VideoPlayer(PiExpChair):
 
         self.initialize_videoplayer()
         self.load_idle_animation()
-
-        self.mqtt_path_identifier = "videoplayer"
 
     def initialize_videoplayer(self):
         self.logger.info("Starting video player")

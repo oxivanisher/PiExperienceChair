@@ -2,6 +2,8 @@
 
 This project controls a ~~omxplayer~~ vlc and i2c outputs from a webui and some i2c button inputs.
 
+Please be aware that the documentation is not complete!
+
 ## Ansible based automated setup
 There is an ansible playbook to install and setup everything. Run the following commands as user `pi` and enter your password when asked:
 ```bash
@@ -10,6 +12,15 @@ git clone https://github.com/oxivanisher/PiExperienceChair.git
 cd PiExperienceChair/ansible
 ansible-playbook -i localhost install.yml --ask-become-pass
 ```
+If you want to set variables from the table below, use the following command scheme:
+```bash
+ansible-playbook -i localhost install.yml --ask-become-pass --extra-vars "service_debug=true"
+```
+
+## Supported variables:
+| Name          | Comment                                               |
+|---------------|-------------------------------------------------------|
+| service_debug | Deploys the systemd services with enabled debug flag. | 
 
 ## Tool notes
 * Check if i2c is working: `apt install i2c-tools` and `i2cdetect -y 1`
@@ -44,15 +55,24 @@ Watchdog service events can be triggered by creating files in `tmp/`. This is ma
 * `reboot_computer`: Reboot the computer
 * `shutdown_computer`: Shuts the computer down
 
+## Config
+The `config.yaml` contains all relevant configuration settings. This includes:
+* Configuration of each output
+* Configuration of scenes and profiles
+* Profiles contain the target settings of outputs
+* One scene is a list of profiles with a start timestamp which specifies when during the scene this profile should be applied.
+* The idle scene (when nothing is currently playing)
 
-## tmp claude prompt save
-#todo
+## MQTT Topics
+The communication between the different Python modules/nodes is done on the topic `base_topic` in the `broker.yaml` file.
 
-I need to add support for external displays that show synchronized videos using a custom TCP protocol. I have a PDF with the protocol specifications that I'd like to implement in a similar style to the existing components.
-Can you help me create a display controller that:
-1. Follows the same pattern as other controllers
-2. Integrates with the timed output system
-3. Handles TCP communication according to the protocol
-4. Synchronizes video playback with the main system
-
-the protocol is specified in tmp/TU Series Control Protocol V3.0.0 minimized.pdf
+| Topic                                      | Comment                                                                                  |
+|--------------------------------------------|------------------------------------------------------------------------------------------|
+| base_topic/status                          | Online/Offline messages from nodes.                                                      | 
+| base_topic/control                         | Scene control like "next", "stop", "play" and so on.                                     |
+| base_topic/{node}/scene                    | Nodes publish what scene they play. Most nodes subscribe to the videoplayer scene topic. |
+| base_topic/{node}/profile                  | Nodes publish what profile is played.                                                    |
+| base_topic/{node}/idle                     | Nodes publish when they currently are playing the idle scene.                            |
+| base_topic/output/notify/{module}/{output} | Nodes publish which outputs are set to what.                                             |          
+| base_topic/output/set/{module}/{output}    | To control specific outputs.                                                             |
+| wled/                                      | Base topic for wled target devices. `wled.py` sends its commands to this topic.          |
