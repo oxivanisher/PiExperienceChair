@@ -367,4 +367,4 @@ if __name__ == '__main__':
     pxc.__init__(subscribe_to_everything=True)
     pxc.mqtt_client.loop_start()
     pxc.logger.info(f"Starting flask app in {app.root_path}")
-    app.run(debug=False, host="0.0.0.0")
+    app.run(debug=os.getenv('DEBUG', False), host="0.0.0.0")
