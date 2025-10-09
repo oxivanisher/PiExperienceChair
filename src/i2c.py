@@ -71,7 +71,7 @@ class I2cController(PiExpChair):
         super().on_message(client, userdata, msg)
 
         try:
-            if msg.topic == "%s/videoplayer/scene" % self.mqtt_config['base_topic']:
+            if msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/scene":
 
                 if msg.payload.decode() == "":
                     self.logger.info("Received play no scene command")
@@ -84,7 +84,7 @@ class I2cController(PiExpChair):
                     else:
                         self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
 
-            elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
+            elif msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/idle":
                 self.logger.info("Received idle scene command")
                 self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
                 self.set_idle_outputs()
@@ -178,7 +178,7 @@ class I2cController(PiExpChair):
                             self.logger.debug("Detected shutdown button press")
                             self.send_shutdown()
                             with open("tmp/shutdown_computer", "w") as text_file:
-                                text_file.write("Force system shutdown from i2c at %s" % time.time())
+                                text_file.write(f"Force system shutdown from i2c at {time.time()}")
             except OSError as e:
                 self.logger.warning(f"Catching OSError during reading of the pins: {e}")
 

@@ -105,10 +105,10 @@ def index():
         last_scene_date = 0.0
         last_scene_index = 0
         for topic in pxc.last_messages.keys():
-            if topic == "%s/videoplayer/scene" % pxc.mqtt_config['base_topic']:
+            if topic == f"{pxc.mqtt_config['base_topic']}/videoplayer/scene":
                 for date in pxc.last_messages[topic]:
                     extracted_scenes.append((date, pxc.last_messages[topic][date]))
-            if topic == "%s/videoplayer/idle" % pxc.mqtt_config['base_topic']:
+            if topic == f"{pxc.mqtt_config['base_topic']}/videoplayer/idle":
                 for date in pxc.last_messages[topic]:
                     last_idle = date
 
@@ -317,7 +317,7 @@ def quit():
 def force_restart():
     pxc.send_stop()
     with open("tmp/force_restart", "w") as text_file:
-        text_file.write("Force restart requested %s" % time.time())
+        text_file.write(f"Force restart requested {time.time()}")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'status': 'success', 'message': "All services are being restarted"})
     alert_message = "Please wait, all services including the webinterface and the videoplayer are being restarted."
@@ -328,7 +328,7 @@ def force_restart():
 def reboot_computer():
     pxc.send_reboot()
     with open("tmp/reboot_computer", "w") as text_file:
-        text_file.write("Force system reboot from webui at %s" % time.time())
+        text_file.write(f"Force system reboot from webui at {time.time()}")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'status': 'success', 'message': "System is rebooting"})
     alert_message = "Please wait, the computer is rebooting"
@@ -339,7 +339,7 @@ def reboot_computer():
 def shutdown_computer():
     pxc.send_shutdown()
     with open("tmp/shutdown_computer", "w") as text_file:
-        text_file.write("Force system shutdown from webui at %s" % time.time())
+        text_file.write(f"Force system shutdown from webui at {time.time()}")
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'status': 'success', 'message': "System is shutting down"})
     alert_message = "The computer is shut down."

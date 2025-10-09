@@ -26,7 +26,7 @@ class VideoPlayer(PiExpChair):
         self.logger.info("Starting video player")
         vlc_command = ["vlc", "--fullscreen", "--no-video-title-show", "--quiet-synchro", "--no-qt-fs-controller",
                        "--disable-screensaver", "-I", "oldrc", "--rc-unix", self.config['videoplayer']['rc_socket']]
-        self.logger.debug("Please make sure a VLC is running: %s", " ".join(vlc_command))
+        self.logger.debug(f"Please make sure a VLC is running: {' '.join(vlc_command)}")
         self.logger.debug("List of configured scenes:")
         for idx, scene in enumerate(self.config['scenes']):
             self.logger.debug(f"{idx}: {scene['name']}")

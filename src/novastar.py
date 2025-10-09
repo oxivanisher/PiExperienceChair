@@ -67,7 +67,7 @@ class NovastarController(PiExpChair):
         super().on_message(client, userdata, msg)
 
         try:
-            if msg.topic == "%s/videoplayer/scene" % self.mqtt_config['base_topic']:
+            if msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/scene":
 
                 if msg.payload.decode() == "":
                     self.logger.info("Received play no scene command")
@@ -80,7 +80,7 @@ class NovastarController(PiExpChair):
                     else:
                         self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
 
-            elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
+            elif msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/idle":
                 self.logger.info("Received idle scene command")
                 self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
                 self.set_idle_outputs()

@@ -161,7 +161,7 @@ class PiExpChair:
         self.mqtt_client.on_message = self.on_message
 
         # Connect to MQTT broker
-        self.mqtt_client.will_set("%s/status" % self.mqtt_config['base_topic'],
+        self.mqtt_client.will_set(f"{self.mqtt_config['base_topic']}/status",
                                   f"{self.mqtt_client_id} offline", 0, False)
         self.mqtt_client.connect(self.mqtt_config['host'], self.mqtt_config['port'])
 
@@ -202,7 +202,7 @@ class PiExpChair:
                 self.mqtt_subscribe(client, "i2c/#")
 
 
-            self.mqtt_client.publish("%s/status" % self.mqtt_config['base_topic'],
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/status",
                                      f"{self.mqtt_client_id} online")
             return True
 
@@ -211,7 +211,7 @@ class PiExpChair:
             self.logger.debug(f"Received message on topic {msg.topic}: {msg.payload}")
             self.log_mqtt_message(msg)
 
-            if msg.topic == "%s/control" % self.mqtt_config['base_topic']:
+            if msg.topic == f"{self.mqtt_config['base_topic']}/control":
                 if msg.payload.decode() == "quit":
                     self.logger.info("Received quit command")
                     self.quit()
@@ -238,12 +238,12 @@ class PiExpChair:
             self.logger.warning("Error processing message in on_message:", e)
 
     def mqtt_subscribe(self, client, channel_name):
-        channel = "%s/%s" % (self.mqtt_config['base_topic'], channel_name)
+        channel = f"{self.mqtt_config['base_topic']}/{channel_name}"
         self.logger.debug(f"Subscribing to channel: {channel}")
         client.subscribe(channel)
 
     def _send_control_command(self, command):
-        self.mqtt_client.publish("%s/control" % self.mqtt_config['base_topic'], command)
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/control", command)
 
     def send_quit(self):
         self.logger.info("Sending quit command")
