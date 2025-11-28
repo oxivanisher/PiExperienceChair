@@ -63,6 +63,9 @@ The `config.yaml` contains all relevant configuration settings. This includes:
 * One scene is a list of profiles with a start timestamp which specifies when during the scene this profile should be applied.
 * The idle scene (when nothing is currently playing)
 
+### Multi-Instance Video Player Support
+The project supports multiple Raspberry Pi instances playing different video files for the same scene. Each instance is identified by its hostname and the configuration uses a `files:` dictionary to map hostnames to video files. See [MULTI_INSTANCE_VIDEOPLAYER.md](MULTI_INSTANCE_VIDEOPLAYER.md) for complete documentation.
+
 ## MQTT Topics
 The communication between the different Python modules/nodes is done on the topic `base_topic` in the `broker.yaml` file.
 

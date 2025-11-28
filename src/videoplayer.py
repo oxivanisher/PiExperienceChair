@@ -17,6 +17,10 @@ class VideoPlayer(PiExpChair):
         self.playback_start_time = None
         self.return_to_idle = False
 
+        # Get hostname for multi-instance support
+        self.hostname = socket.gethostname()
+        self.logger.info(f"VideoPlayer instance running on hostname: {self.hostname}")
+
         self.initialize_videoplayer()
         self.load_idle_animation()
 
@@ -29,11 +33,33 @@ class VideoPlayer(PiExpChair):
         for idx, scene in enumerate(self.config['scenes']):
             self.logger.debug(f"{idx}: {scene['name']}")
 
-    def load_idle_animation(self):
-        self.logger.debug(f"Loading idle animation: {self.config['idle']['file']}")
+    def get_file_for_hostname(self, files_config):
+        """
+        Get the video file for the current hostname.
+        If no file is configured for this hostname, return None (will trigger idle animation).
 
-        current_file = os.path.join(self.config['videoplayer']['media_path'],
-                                    self.config['idle']['file'])
+        Args:
+            files_config: Dictionary mapping hostname to filename
+
+        Returns:
+            str: Filename for this hostname, or None if not found
+        """
+        if self.hostname in files_config:
+            return files_config[self.hostname]
+        else:
+            self.logger.debug(f"No file configured for hostname '{self.hostname}', will play idle animation")
+            return None
+
+    def load_idle_animation(self):
+        idle_file = self.get_file_for_hostname(self.config['idle']['files'])
+
+        if idle_file is None:
+            self.logger.warning(f"No idle animation configured for hostname '{self.hostname}'")
+            return
+
+        self.logger.debug(f"Loading idle animation: {idle_file}")
+
+        current_file = os.path.join(self.config['videoplayer']['media_path'], idle_file)
         self.next_scene_timeout = -1.0
 
         self.send_vlc_command("clear")
@@ -45,10 +71,12 @@ class VideoPlayer(PiExpChair):
         self.playback_start_time = None
         self.current_scene_index = -1
 
+        # Enqueue all scenes that have files for this hostname
         for scene in self.config['scenes']:
-            current_file = os.path.join(self.config['videoplayer']['media_path'],
-                                        scene['file'])
-            self.send_vlc_command("enqueue " + current_file)
+            scene_file = self.get_file_for_hostname(scene['files'])
+            if scene_file:
+                current_file = os.path.join(self.config['videoplayer']['media_path'], scene_file)
+                self.send_vlc_command("enqueue " + current_file)
         self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
 
     def stop_videoplayer(self):
@@ -62,11 +90,18 @@ class VideoPlayer(PiExpChair):
             client_socket.connect(self.config['videoplayer']['rc_socket'])
             client_socket.sendall(command.encode())
         except FileNotFoundError:
-            self.logger.warning(f"VLC control socket in {self.config['videoplayer']['rc_socket']} not found. "
-                                f"Is VLC running?")
-
+            self.logger.error(f"VLC control socket '{self.config['videoplayer']['rc_socket']}' not found. Is VLC running?")
+        except ConnectionRefusedError:
+            self.logger.error(f"VLC refused connection on socket '{self.config['videoplayer']['rc_socket']}'. Is VLC accepting connections?")
+        except socket.timeout:
+            self.logger.error(f"VLC socket connection timed out for command: {command}")
+        except Exception as e:
+            self.logger.error(f"Failed to send VLC command '{command}': {type(e).__name__}: {e}")
         finally:
-            client_socket.close()
+            try:
+                client_socket.close()
+            except Exception:
+                pass  # Ignore errors during socket cleanup
 
     def play_scene(self, scene_index):
         if scene_index >= len(self.config['scenes']):
@@ -77,12 +112,20 @@ class VideoPlayer(PiExpChair):
             self.play()
         else:
             self.current_scene_index = scene_index
+            current_scene = self.config['scenes'][self.current_scene_index]
+
+            # Get the file for this hostname
+            scene_file = self.get_file_for_hostname(current_scene['files'])
+            if scene_file is None:
+                self.logger.info(f"No file for scene '{current_scene['name']}' on hostname '{self.hostname}', playing idle")
+                self.load_idle_animation()
+                return
+
             playlist_position = self.current_scene_index + 2
 
             self.logger.debug(f"Play python scene: {self.current_scene_index} (vlc playlist index: {playlist_position})")
 
-            current_scene = self.config['scenes'][self.current_scene_index]
-            current_file = os.path.join(self.config['videoplayer']['media_path'], current_scene['file'])
+            current_file = os.path.join(self.config['videoplayer']['media_path'], scene_file)
             self.next_scene_timeout = time.time() + current_scene['duration']
 
             self.logger.debug(f"Publishing scene {current_scene['name']} to MQTT")
@@ -100,9 +143,10 @@ class VideoPlayer(PiExpChair):
             self.next_scene_timeout = time.time() + self.config['scenes'][scene_index]['duration']
             self.return_to_idle = True
 
-            current_scene = self.config['scenes'][self.current_scene_index]
-            current_file = os.path.join(self.config['videoplayer']['media_path'], current_scene['file'])
-
+            # Note: The actual file handling is done in play_scene() above
+            # The commented out code below is obsolete:
+            # current_scene = self.config['scenes'][self.current_scene_index]
+            # current_file = os.path.join(self.config['videoplayer']['media_path'], current_scene['file'])
             # self.logger.debug(f"Playing video file {os.path.abspath(current_file)} for single scene {current_scene['name']}")
             # self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
         else:

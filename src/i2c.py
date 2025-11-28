@@ -1,4 +1,5 @@
 from piexpchair import PiExpChair
+from retry_utils import retry_with_context
 
 import board
 import busio
@@ -37,9 +38,16 @@ class I2cController(PiExpChair):
         self.mcp = {}
         self.input_states = {}
 
+        # Initialize MCP23017 devices with retry logic
         for addr in i2c_addresses:
             self.logger.debug(f"Setup mcp for i2c address: {hex(addr)}")
-            self.mcp[addr] = MCP23017(i2c, addr)  # creates an MCP object with the given address
+            try:
+                self._initialize_mcp(addr)
+            except Exception as e:
+                self.logger.error(f"Failed to initialize MCP23017 at address {hex(addr)}: {e}")
+                self.logger.error("I2C controller initialization failed. Exiting.")
+                self.terminate = True
+                return
 
         self.i2c_inputs = {}
         for input_name in self.config['i2c']['input'].keys():
@@ -61,6 +69,36 @@ class I2cController(PiExpChair):
         # Disable all outputs at startup
         self.set_idle_outputs()
 
+    @retry_with_context("MCP23017 initialization", max_attempts=5, delay=0.2, exceptions=(OSError, IOError, RuntimeError))
+    def _initialize_mcp(self, addr):
+        """Initialize MCP23017 device with retry logic."""
+        self.mcp[addr] = MCP23017(i2c, addr)
+
+    @retry_with_context("I2C pin read", max_attempts=3, delay=0.05, exceptions=(OSError, IOError))
+    def _read_pin_value(self, pin):
+        """Read pin value with retry logic."""
+        return pin.value
+
+    @retry_with_context("I2C pin write", max_attempts=3, delay=0.05, exceptions=(OSError, IOError))
+    def _write_pin_value(self, pin, value):
+        """Write pin value with retry logic."""
+        pin.value = value
+
+    @retry_with_context("Arduino I2C write", max_attempts=3, delay=0.1, exceptions=(OSError, IOError, RuntimeError))
+    def _arduino_i2c_write(self, address, data):
+        """Write data to Arduino device with retry logic and proper locking."""
+        lock_timeout = time.time() + 2.0  # 2 second timeout for lock acquisition
+
+        while not i2c.try_lock():
+            if time.time() > lock_timeout:
+                raise RuntimeError(f"Failed to acquire I2C lock for Arduino at {hex(address)} within 2 seconds")
+            time.sleep(0.01)
+
+        try:
+            i2c.writeto(address, data)
+        finally:
+            i2c.unlock()
+
     def on_connect(self, client, userdata, flags, reason_code, properties):
         super().on_connect(client, userdata, flags, reason_code, properties)
         self.mqtt_subscribe(client, "videoplayer/#")
@@ -70,25 +108,30 @@ class I2cController(PiExpChair):
 
         try:
             if msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/scene":
-
-                if msg.payload.decode() == "":
+                payload = msg.payload.decode()
+                if payload == "":
                     self.logger.info("Received play no scene command")
                 else:
-                    self.current_scene_index = int(msg.payload.decode())
-                    if 0 <= self.current_scene_index < len(self.config['scenes']):
-                        self.logger.info(f"Received scene index {self.current_scene_index} to play")
-                        self.play_scene(True)
-                        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
-                    else:
-                        self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
+                    try:
+                        self.current_scene_index = int(payload)
+                        if 0 <= self.current_scene_index < len(self.config['scenes']):
+                            self.logger.info(f"Received scene index {self.current_scene_index} to play")
+                            self.play_scene(True)
+                            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
+                        else:
+                            self.logger.warning(f"Received out-of-range scene index: {self.current_scene_index} (valid: 0-{len(self.config['scenes'])-1})")
+                    except ValueError as e:
+                        self.logger.error(f"Invalid scene index format: '{payload}': {e}")
 
             elif msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/idle":
                 self.logger.info("Received idle scene command")
                 self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
                 self.set_idle_outputs()
 
+        except UnicodeDecodeError as e:
+            self.logger.error(f"Failed to decode videoplayer message payload on topic {msg.topic}: {e}")
         except Exception as e:
-            self.logger.warning("Error processing message in on_message for videoplayer:", e)
+            self.logger.error(f"Error processing videoplayer message on topic {msg.topic}: {type(e).__name__}: {e}", exc_info=True)
 
     def play_scene(self, scene_index):
         # Reset output magic
@@ -105,8 +148,11 @@ class I2cController(PiExpChair):
     def set_i2c_output(self, output_name, state):
         self.logger.debug(f"Setting output {output_name} to state: {state}")
         if output_name in self.i2c_outputs:
-            self.i2c_outputs[output_name].value = bool(state)
-            self.output_notify(output_name, bool(state))
+            try:
+                self._write_pin_value(self.i2c_outputs[output_name], bool(state))
+                self.output_notify(output_name, bool(state))
+            except Exception as e:
+                self.logger.error(f"Failed to set I2C output {output_name} to {state}: {e}")
         else:
             self.logger.warning(f"Unknown output: {output_name}")
 
@@ -118,22 +164,15 @@ class I2cController(PiExpChair):
         :param value: Value to set (0-255)
         """
         try:
-
             # Pack two bytes as struct
             data = struct.pack('BB', output_pin, value)
 
-            # Write the data to the I2C bus
-            while not i2c.try_lock():
-                pass
+            # Write the data to the I2C bus with retry logic
+            self._arduino_i2c_write(address, data)
 
-            i2c.writeto(address, data)
-
-            self.logger.debug(f"Sent command to Arduino {address}: pin={output_pin}, value={value}")
+            self.logger.debug(f"Sent command to Arduino {hex(address)}: pin={output_pin}, value={value}")
         except Exception as e:
-            self.logger.warning(f"Error sending command to Arduino at address {address}: {e}")
-
-        finally:
-            i2c.unlock()
+            self.logger.error(f"Failed to send command to Arduino at address {hex(address)}: pin={output_pin}, value={value}. Error: {e}")
 
     def set_arduino_output(self, device_name, value):
         """
@@ -166,7 +205,7 @@ class I2cController(PiExpChair):
         self.handle_output_change()
         for input_name in self.i2c_inputs.keys():
             try:
-                current_value = self.i2c_inputs[input_name].value
+                current_value = self._read_pin_value(self.i2c_inputs[input_name])
                 if current_value != self.input_states[input_name]:
                     self.logger.debug(f"Input {input_name} changed to {current_value}")
                     self.input_states[input_name] = current_value
@@ -188,8 +227,8 @@ class I2cController(PiExpChair):
                             self.send_shutdown()
                             with open("tmp/shutdown_computer", "w") as text_file:
                                 text_file.write(f"Force system shutdown from i2c at {time.time()}")
-            except OSError as e:
-                self.logger.warning(f"Catching OSError during reading of the pins: {e}")
+            except (OSError, IOError, RuntimeError) as e:
+                self.logger.error(f"Failed to read I2C input {input_name} after retries: {e}")
 
     def stop(self):
         self.logger.info("Received stop request. Disabling all outputs.")
