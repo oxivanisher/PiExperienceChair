@@ -27,7 +27,7 @@
       become: true
       become_user: root
 
-    - name: Ensure mosquitto and i2c-tools are installed
+    - name: Ensure required packages are installed
       ansible.builtin.apt:
         name: "{{ item }}"
         state: present
@@ -35,6 +35,7 @@
         - mosquitto
         - i2c-tools
         - python3-virtualenv
+        - swig
       become: true
       become_user: root
 
