@@ -265,6 +265,7 @@ class PiExpChair:
         client.subscribe(channel)
 
     def _send_control_command(self, command):
+        self.logger.debug(f"Sending control command: {command}")
         self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/control", command)
 
     def send_quit(self):
@@ -276,7 +277,7 @@ class PiExpChair:
         self._send_control_command("play")
 
     def send_play_single(self, scene_index):
-        self.logger.info("Sending play single command")
+        self.logger.info(f"Sending play single command for scene {scene_index}")
         self._send_control_command(f"play_single_{int(scene_index)}")
 
     def send_stop(self):
@@ -304,7 +305,7 @@ class PiExpChair:
         self.logger.debug("Method play not implemented")
 
     def play_single(self, scene_index):
-        self.logger.debug("Method play_single not implemented")
+        self.logger.debug(f"Method play_single not implemented for scene {scene_index}")
 
     def stop(self):
         self.logger.debug("Method stop not implemented")
