@@ -18,7 +18,7 @@ class VideoPlayer(PiExpChair):
         self.return_to_idle = False
 
         # Get hostname for multi-instance support
-        self.hostname = socket.gethostname()
+        self.hostname = socket.gethostname().split('.', 1)[0]
         self.logger.info(f"VideoPlayer instance running on hostname: {self.hostname}")
 
         self.initialize_videoplayer()
