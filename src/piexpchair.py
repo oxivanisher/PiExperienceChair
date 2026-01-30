@@ -209,7 +209,7 @@ class PiExpChair:
                 self.mqtt_subscribe(client, "i2c/#")
 
             self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/status",
-                                     f"{self.mqtt_client_id} online")
+                                     f"{self.mqtt_client_id} online", qos=1)
             return True
 
     def on_message(self, client, userdata, msg):
@@ -266,7 +266,7 @@ class PiExpChair:
 
     def _send_control_command(self, command):
         self.logger.debug(f"Sending control command: {command}")
-        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/control", command)
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/control", command, qos=1)
 
     def send_quit(self):
         self.logger.info("Sending quit command")
@@ -327,7 +327,7 @@ class PiExpChair:
         new_output_index = self.check_for_output_change()
         if new_output_index >= 0:
             self.logger.debug(f"New output index {new_output_index}")
-            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/profile", new_output_index)
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/profile", new_output_index, qos=1)
             self.apply_scene_outputs(self.config['scenes'][self.current_scene_index]['timed_outputs'][new_output_index])
 
     def set_idle_outputs(self):
@@ -376,7 +376,7 @@ class PiExpChair:
 
     def output_notify(self, name, value):
         self.logger.debug(f"Notify output change of {name} to {value}")
-        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_notify_topic}/{name}", value)
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_notify_topic}/{name}", value, qos=1)
 
     def output_set(self, name, value):
         self.logger.debug("Method stop not implemented")

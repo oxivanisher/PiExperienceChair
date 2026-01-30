@@ -77,7 +77,7 @@ class VideoPlayer(PiExpChair):
             if scene_file:
                 current_file = os.path.join(self.config['videoplayer']['media_path'], scene_file)
                 self.send_vlc_command("enqueue " + current_file)
-        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True, qos=1)
 
     def stop_videoplayer(self):
         self.logger.info("Stopping video player")
@@ -129,7 +129,7 @@ class VideoPlayer(PiExpChair):
             self.next_scene_timeout = time.time() + current_scene['duration']
 
             self.logger.debug(f"Publishing scene {current_scene['name']} to MQTT")
-            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index, qos=1)
 
             self.logger.debug(f"Playing video file {os.path.abspath(current_file)} for scene {current_scene['name']}")
             self.send_vlc_command("goto %d" % playlist_position)
@@ -148,7 +148,7 @@ class VideoPlayer(PiExpChair):
             # current_scene = self.config['scenes'][self.current_scene_index]
             # current_file = os.path.join(self.config['videoplayer']['media_path'], current_scene['file'])
             # self.logger.debug(f"Playing video file {os.path.abspath(current_file)} for single scene {current_scene['name']}")
-            # self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
+            # self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index, qos=1)
         else:
             self.logger.warning(f"Invalid scene index for single play: {scene_index}")
             self.load_idle_animation()

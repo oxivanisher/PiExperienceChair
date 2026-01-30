@@ -83,7 +83,7 @@ class NovastarController(PiExpChair):
                         if 0 <= self.current_scene_index < len(self.config['scenes']):
                             self.logger.info(f"Received scene index {self.current_scene_index} to play")
                             self.play_scene(True)
-                            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
+                            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index, qos=1)
                         else:
                             self.logger.warning(f"Received out-of-range scene index: {self.current_scene_index} (valid: 0-{len(self.config['scenes'])-1})")
                     except ValueError as e:
@@ -91,7 +91,7 @@ class NovastarController(PiExpChair):
 
             elif msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/idle":
                 self.logger.info("Received idle scene command")
-                self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
+                self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True, qos=1)
                 self.set_idle_outputs()
 
         except UnicodeDecodeError as e:
