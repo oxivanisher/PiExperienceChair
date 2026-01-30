@@ -49,7 +49,7 @@ class WLEDController(PiExpChair):
     def output_set(self, name, value):
         device, strip, element = name.split("/")
         self.logger.info(f"Setting {element} on strip {strip} and device {device} to {value}")
-        device_output = {"on": True, "transition": self.wled_transistion, "seg": [{"id": strip, element: value}]}
+        device_output = {"on": True, "transition": self.wled_transistion, "seg": [{"id": int(strip), element: int(value)}]}
         self.mqtt_client.publish(f"wled/{device}/api", json.dumps(device_output), qos=1)
         self.output_notify(f"{device}/{strip}/{element}", value)
 
