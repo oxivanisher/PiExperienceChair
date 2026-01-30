@@ -250,7 +250,7 @@ class PiExpChair:
 
             # Handle set output messages
             elif msg.topic.startswith(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_set_topic}/"):
-                output_name = msg.topic[len(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_set_topic}/")+1:]
+                output_name = msg.topic[len(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_set_topic}/"):]
                 self.logger.info(f"Received output set message for {output_name} to {msg.payload.decode()}")
                 self.output_set(output_name, msg.payload.decode())
 
