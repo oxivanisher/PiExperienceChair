@@ -76,6 +76,8 @@ The communication between the different Python modules/nodes is done on the topi
 | base_topic/{node}/scene                    | Nodes publish what scene they play. Most nodes subscribe to the videoplayer scene topic. |
 | base_topic/{node}/profile                  | Nodes publish what profile is played.                                                    |
 | base_topic/{node}/idle                     | Nodes publish when they currently are playing the idle scene.                            |
-| base_topic/output/notify/{module}/{output} | Nodes publish which outputs are set to what.                                             |          
+| base_topic/videoplayer/scene_duration      | Published at scene start with the total duration in seconds (float). 0 when idle.        |
+| base_topic/videoplayer/scene_remaining     | Published every second with remaining seconds (int) during playback. 0 when idle.        |
+| base_topic/output/notify/{module}/{output} | Nodes publish which outputs are set to what.                                             |
 | base_topic/output/set/{module}/{output}    | To control specific outputs.                                                             |
 | wled/                                      | Base topic for wled target devices. `wled.py` sends its commands to this topic.          |

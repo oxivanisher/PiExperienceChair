@@ -16,6 +16,7 @@ class VideoPlayer(PiExpChair):
         self.next_scene_timeout = -1.0
         self.playback_start_time = None
         self.return_to_idle = False
+        self.last_remaining_publish_time = 0
 
         # Get hostname for multi-instance support
         self.hostname = socket.gethostname().split('.', 1)[0]
@@ -78,6 +79,8 @@ class VideoPlayer(PiExpChair):
                 current_file = os.path.join(self.config['videoplayer']['media_path'], scene_file)
                 self.send_vlc_command("enqueue " + current_file)
         self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True, qos=1)
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene_duration", 0, qos=1)
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene_remaining", 0, qos=1)
 
     def stop_videoplayer(self):
         self.logger.info("Stopping video player")
@@ -130,6 +133,7 @@ class VideoPlayer(PiExpChair):
 
             self.logger.debug(f"Publishing scene {current_scene['name']} to MQTT")
             self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index, qos=1)
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene_duration", current_scene['duration'], qos=1)
 
             self.logger.debug(f"Playing video file {os.path.abspath(current_file)} for scene {current_scene['name']}")
             self.send_vlc_command("goto %d" % playlist_position)
@@ -185,13 +189,18 @@ class VideoPlayer(PiExpChair):
     def module_run(self):
         # Handle scene transitions
         if self.next_scene_timeout > 0:
-            if time.time() >= self.next_scene_timeout:
+            now = time.time()
+            if now >= self.next_scene_timeout:
                 self.logger.debug("Play next video callback")
                 self.next_scene_timeout = 0
                 if hasattr(self, 'return_to_idle') and self.return_to_idle:
                     self.load_idle_animation()
                 else:
                     self.send_next()
+            elif now - self.last_remaining_publish_time >= 1.0:
+                self.last_remaining_publish_time = now
+                remaining = int(self.next_scene_timeout - now)
+                self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene_remaining", remaining, qos=1)
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         super().on_connect(client, userdata, flags, reason_code, properties)
