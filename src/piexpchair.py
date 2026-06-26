@@ -69,7 +69,7 @@ config_schema = Schema({
         "controller_port": int
     },
     "idle": {
-        "file": str,
+        "files": {str: str},  # hostname: filename mapping
         "i2c_outputs": {Optional(str): bool},
         "arduino_outputs": {Optional(str): int},
         "wled_outputs": {Optional(int): str},
@@ -77,7 +77,7 @@ config_schema = Schema({
     },
     "scenes": [{
         "name": str,
-        "file": str,
+        "files": {str: str},  # hostname: filename mapping
         "image": str,
         "image_active": str,
         "duration": float,
@@ -130,7 +130,7 @@ def read_config(file_path, logger, schema_config):
 
 
 class PiExpChair:
-    def __init__(self, subscribe_to_everything=False):
+    def __init__(self, subscribe_to_everything=False, identifier=None):
         self.logger = logging
 
         self.logger.info(f"Initializing PiExpChair module {self.__class__.__name__}")
@@ -156,12 +156,20 @@ class PiExpChair:
             self.logger.debug(f"Enable MQTT logging since DEBUG is enabled")
             self.mqtt_client.enable_logger(self.logger)
 
+        # Configure MQTT topics
+        self.mqtt_path_identifier = "__super__"
+        if identifier:
+            self.mqtt_path_identifier = identifier
+
+        self.mqtt_output_notify_topic = f"output/notify/{self.mqtt_path_identifier}"
+        self.mqtt_output_set_topic = f"output/set/{self.mqtt_path_identifier}"
+
         # Configure MQTT client callbacks
         self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
 
         # Connect to MQTT broker
-        self.mqtt_client.will_set("%s/status" % self.mqtt_config['base_topic'],
+        self.mqtt_client.will_set(f"{self.mqtt_config['base_topic']}/status",
                                   f"{self.mqtt_client_id} offline", 0, False)
         self.mqtt_client.connect(self.mqtt_config['host'], self.mqtt_config['port'])
 
@@ -172,8 +180,6 @@ class PiExpChair:
         self.current_output_index = -1
         self.current_scene_index = -1
         self.output_check_disabled = False
-
-        self.mqtt_path_identifier = "__super__"
 
         if self.config:
             self.terminate = False
@@ -196,14 +202,14 @@ class PiExpChair:
         else:
             self.logger.debug("Successfully connected to MQTT Broker")
             self.mqtt_subscribe(client, "control")
+            self.mqtt_subscribe(client, f"{self.mqtt_output_set_topic}/#")
 
             if self.subscribe_to_everything:
                 self.mqtt_subscribe(client, "videoplayer/#")
                 self.mqtt_subscribe(client, "i2c/#")
 
-
-            self.mqtt_client.publish("%s/status" % self.mqtt_config['base_topic'],
-                                     f"{self.mqtt_client_id} online")
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/status",
+                                     f"{self.mqtt_client_id} online", qos=1)
             return True
 
     def on_message(self, client, userdata, msg):
@@ -211,39 +217,56 @@ class PiExpChair:
             self.logger.debug(f"Received message on topic {msg.topic}: {msg.payload}")
             self.log_mqtt_message(msg)
 
-            if msg.topic == "%s/control" % self.mqtt_config['base_topic']:
-                if msg.payload.decode() == "quit":
+            # Handle control messages
+            if msg.topic == f"{self.mqtt_config['base_topic']}/control":
+                payload = msg.payload.decode()
+                if payload == "quit":
                     self.logger.info("Received quit command")
                     self.quit()
-                elif msg.payload.decode() == "play":
+                elif payload == "play":
                     self.logger.info("Received play command")
                     self.play()
-                elif msg.payload.decode() == "stop":
+                elif payload == "stop":
                     self.logger.info("Received stop command")
                     self.stop()
-                elif msg.payload.decode() == "next":
+                elif payload == "next":
                     self.logger.info("Received next command")
                     self.next()
-                elif msg.payload.decode() == "prev":
+                elif payload == "prev":
                     self.logger.info("Received prev command")
                     self.prev()
-                elif msg.payload.decode() == "shutdown":
+                elif payload == "shutdown":
                     self.logger.info("Received shutdown command")
                     self.shutdown()
-                elif "play_single_" in msg.payload.decode(): # yes ... I puked a little in my mouth when I wrote this
-                    scene_index = int(msg.payload.decode().replace("play_single_", ""))
-                    self.logger.info(f"Received play_single command for index {scene_index}")
-                    self.play_single(scene_index)
+                elif "play_single_" in payload:
+                    try:
+                        scene_index = int(payload.replace("play_single_", ""))
+                        self.logger.info(f"Received play_single command for index {scene_index}")
+                        self.play_single(scene_index)
+                    except ValueError as e:
+                        self.logger.error(f"Invalid scene index in play_single command '{payload}': {e}")
+                else:
+                    self.logger.warning(f"Unknown control command: {payload}")
+
+            # Handle set output messages
+            elif msg.topic.startswith(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_set_topic}/"):
+                output_name = msg.topic[len(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_set_topic}/"):]
+                self.logger.info(f"Received output set message for {output_name} to {msg.payload.decode()}")
+                self.output_set(output_name, msg.payload.decode())
+
+        except UnicodeDecodeError as e:
+            self.logger.error(f"Failed to decode MQTT message payload on topic {msg.topic}: {e}")
         except Exception as e:
-            self.logger.warning("Error processing message in on_message:", e)
+            self.logger.error(f"Error processing MQTT message on topic {msg.topic}: {type(e).__name__}: {e}", exc_info=True)
 
     def mqtt_subscribe(self, client, channel_name):
-        channel = "%s/%s" % (self.mqtt_config['base_topic'], channel_name)
+        channel = f"{self.mqtt_config['base_topic']}/{channel_name}"
         self.logger.debug(f"Subscribing to channel: {channel}")
         client.subscribe(channel)
 
     def _send_control_command(self, command):
-        self.mqtt_client.publish("%s/control" % self.mqtt_config['base_topic'], command)
+        self.logger.debug(f"Sending control command: {command}")
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/control", command, qos=1)
 
     def send_quit(self):
         self.logger.info("Sending quit command")
@@ -254,7 +277,7 @@ class PiExpChair:
         self._send_control_command("play")
 
     def send_play_single(self, scene_index):
-        self.logger.info("Sending play single command")
+        self.logger.info(f"Sending play single command for scene {scene_index}")
         self._send_control_command(f"play_single_{int(scene_index)}")
 
     def send_stop(self):
@@ -282,7 +305,7 @@ class PiExpChair:
         self.logger.debug("Method play not implemented")
 
     def play_single(self, scene_index):
-        self.logger.debug("Method play_single not implemented")
+        self.logger.debug(f"Method play_single not implemented for scene {scene_index}")
 
     def stop(self):
         self.logger.debug("Method stop not implemented")
@@ -304,7 +327,7 @@ class PiExpChair:
         new_output_index = self.check_for_output_change()
         if new_output_index >= 0:
             self.logger.debug(f"New output index {new_output_index}")
-            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/profile", new_output_index)
+            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/profile", new_output_index, qos=1)
             self.apply_scene_outputs(self.config['scenes'][self.current_scene_index]['timed_outputs'][new_output_index])
 
     def set_idle_outputs(self):
@@ -351,6 +374,13 @@ class PiExpChair:
         else:
             return -1
 
+    def output_notify(self, name, value):
+        self.logger.debug(f"Notify output change of {name} to {value}")
+        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_output_notify_topic}/{name}", value, qos=1)
+
+    def output_set(self, name, value):
+        self.logger.debug("Method stop not implemented")
+
     # Control methods
     def module_run(self):
         pass
@@ -359,20 +389,27 @@ class PiExpChair:
         if self.terminate:
             self.logger.warning("NOT Entering main loop, probably invalid config found. Exiting")
         else:
-            self.logger.debug("Entering main loop")
+            self.logger.info("Entering main loop")
 
             try:
                 self.mqtt_client.loop_start()
 
                 while not self.terminate:
-                    self.module_run()
+                    try:
+                        self.module_run()
+                    except Exception as e:
+                        self.logger.error(f"Error in module_run(): {type(e).__name__}: {e}", exc_info=True)
+                        # Continue running even if module_run fails
                     time.sleep(0.01)
 
+            except KeyboardInterrupt:
+                self.logger.info("Received keyboard interrupt, shutting down gracefully")
             except Exception as e:
-                self.logger.warning("Error processing message in main loop:", e)
+                self.logger.critical(f"Fatal error in main loop: {type(e).__name__}: {e}", exc_info=True)
             finally:
+                self.logger.info("Stopping MQTT client and cleaning up")
                 self.mqtt_client.loop_stop()
-                self.logger.debug("Main loop ended")
+                self.logger.info("Main loop ended")
                 self.mqtt_client.disconnect()
 
     def quit(self):

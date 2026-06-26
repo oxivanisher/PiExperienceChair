@@ -95,7 +95,9 @@ novastar:
   controller_port: 5200
 
 idle:
-  file: idle.mp4
+  files:
+    primary: idle.mp4
+    secondary: idle_ambient.mp4
   i2c_outputs:
     massage: false
     heat1: false
@@ -110,7 +112,9 @@ idle:
 
 scenes:
   - name: desert
-    file: desert.mp4
+    files:
+      primary: desert.mp4
+      secondary: desert_ambient.mp4
     image: desert_inactive.jpg
     image_active: desert_active.jpg
     duration: 30.321
@@ -144,7 +148,9 @@ scenes:
           arduino1_output2: 60
 
   - name: ice
-    file: ice.mp4
+    files:
+      primary: ice.mp4
+      secondary: ice_ambient.mp4
     image: ice_inactive.jpg
     image_active: ice_active.jpg
     duration: 10.13
@@ -178,7 +184,9 @@ scenes:
           arduino1_output2: 60
 
   - name: jungle
-    file: jungle.mp4
+    files:
+      primary: jungle.mp4
+      # secondary instance will play idle if no file specified for its hostname
     image: jungle_inactive.jpg
     image_active: jungle_active.jpg
     duration: 15.06

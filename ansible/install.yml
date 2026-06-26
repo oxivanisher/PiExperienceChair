@@ -22,12 +22,12 @@
         path: "/boot/firmware/config.txt"
         line: "dtparam=i2c_arm=on"
         state: present
-      when: ansible_architecture == "aarch64"
+      when: ansible_facts.architecture == "aarch64"
       notify: Reboot_pi
       become: true
       become_user: root
 
-    - name: Ensure mosquitto and i2c-tools are installed
+    - name: Ensure required packages are installed
       ansible.builtin.apt:
         name: "{{ item }}"
         state: present

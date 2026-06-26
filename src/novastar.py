@@ -5,7 +5,7 @@ import select
 
 class NovastarController(PiExpChair):
     def __init__(self):
-        super().__init__()
+        super().__init__(identifier="novastar")
 
         if self.terminate:
             return
@@ -53,6 +53,12 @@ class NovastarController(PiExpChair):
     def play_video(self, file_index):
         if not self.send_command(self.build_play_command(file_index)):
             self.logger.warning(f"Failed to play video index {file_index}!")
+        self.output_notify("video_index", file_index)
+
+    def output_set(self, name, value):
+        self.logger.info(f"Setting {name} to {value}")
+        if name ==  "video_index":
+            self.play_video(value)
 
     def apply_scene_outputs(self, current_outputs):
         if 'novastar_output' in current_outputs:
@@ -67,26 +73,31 @@ class NovastarController(PiExpChair):
         super().on_message(client, userdata, msg)
 
         try:
-            if msg.topic == "%s/videoplayer/scene" % self.mqtt_config['base_topic']:
-
-                if msg.payload.decode() == "":
+            if msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/scene":
+                payload = msg.payload.decode()
+                if payload == "":
                     self.logger.info("Received play no scene command")
                 else:
-                    self.current_scene_index = int(msg.payload.decode())
-                    if 0 <= self.current_scene_index < len(self.config['scenes']):
-                        self.logger.info(f"Received scene index {self.current_scene_index} to play")
-                        self.play_scene(True)
-                        self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index)
-                    else:
-                        self.logger.info(f"Received unknown scene index: {msg.payload.decode()}")
+                    try:
+                        self.current_scene_index = int(payload)
+                        if 0 <= self.current_scene_index < len(self.config['scenes']):
+                            self.logger.info(f"Received scene index {self.current_scene_index} to play")
+                            self.play_scene(True)
+                            self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/scene", self.current_scene_index, qos=1)
+                        else:
+                            self.logger.warning(f"Received out-of-range scene index: {self.current_scene_index} (valid: 0-{len(self.config['scenes'])-1})")
+                    except ValueError as e:
+                        self.logger.error(f"Invalid scene index format: '{payload}': {e}")
 
-            elif msg.topic == "%s/videoplayer/idle" % self.mqtt_config['base_topic']:
+            elif msg.topic == f"{self.mqtt_config['base_topic']}/videoplayer/idle":
                 self.logger.info("Received idle scene command")
-                self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True)
+                self.mqtt_client.publish(f"{self.mqtt_config['base_topic']}/{self.mqtt_path_identifier}/idle", True, qos=1)
                 self.set_idle_outputs()
 
+        except UnicodeDecodeError as e:
+            self.logger.error(f"Failed to decode videoplayer message payload on topic {msg.topic}: {e}")
         except Exception as e:
-            self.logger.warning("Error processing message in on_message for videoplayer:", e)
+            self.logger.error(f"Error processing videoplayer message on topic {msg.topic}: {type(e).__name__}: {e}", exc_info=True)
 
     def play_scene(self, scene_index):
         # Reset output magic
